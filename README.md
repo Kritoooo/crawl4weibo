@@ -1,6 +1,6 @@
 # Crawl4Weibo
 
-一个专业的微博爬虫Python库，基于实际测试成功的方案，无需Cookie即可使用。
+一个开箱即用的微博爬虫Python库，基于实际测试成功的方案，无需Cookie即可使用。
 
 ## 特性
 
@@ -13,7 +13,7 @@
 ## 安装
 
 ```bash
-pip install -e .
+pip install crawl4weibo
 ```
 
 ## 快速开始
@@ -61,20 +61,6 @@ WeiboClient(cookies=None, log_level="INFO", log_file=None)
 - `get_user_posts(uid, page=1)` - 获取用户微博
 - `search_users(query, page=1, count=10)` - 搜索用户
 - `search_posts(query, page=1)` - 搜索微博
-
-### 数据模型
-
-**User (用户)**:
-- `screen_name` - 用户名
-- `followers_count` - 粉丝数  
-- `posts_count` - 微博数
-- `verified` - 是否认证
-
-**Post (微博)**:
-- `text` - 微博文本
-- `attitudes_count` - 点赞数
-- `comments_count` - 评论数
-- `created_at` - 发布时间
 
 ## 运行示例
 
