@@ -31,6 +31,9 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.urls]
+Homepage = "https://github.com/Kritoooo/crawl4weibo"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=6.0",
@@ -51,3 +54,6 @@ target-version = ['py37']
 [tool.isort]
 profile = "black"
 line_length = 88
+
+[tool.setuptools_scm]         
+write_to = "crawl4weibo/_version.py"
