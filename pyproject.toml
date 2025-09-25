@@ -55,5 +55,4 @@ target-version = ['py37']
 profile = "black"
 line_length = 88
 
-[tool.setuptools_scm]         
-write_to = "crawl4weibo/_version.py"
+[tool.setuptools_scm]
