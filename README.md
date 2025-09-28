@@ -35,6 +35,12 @@ for post in posts:
     print(f"微博: {post.text[:50]}...")
     print(f"点赞: {post.attitudes_count}")
 
+# 根据微博ID获取单条微博
+post = client.get_post_by_bid("Q6FyDtbQc")
+print(f"微博内容: {post.text[:50]}")
+# print(f"发布时间: {post.created_at}")
+# print(f"图片数量: {len(post.pic_urls)}")
+
 # 搜索用户
 users = client.search_users("技术博主")
 for user in users:
@@ -59,6 +65,7 @@ WeiboClient(cookies=None, log_level="INFO", log_file=None)
 
 - `get_user_by_uid(uid)` - 获取用户信息
 - `get_user_posts(uid, page=1)` - 获取用户微博
+- `get_post_by_bid(bid)` - 根据微博ID获取单条微博
 - `search_users(query, page=1, count=10)` - 搜索用户
 - `search_posts(query, page=1)` - 搜索微博
 

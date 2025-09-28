@@ -93,6 +93,7 @@ class WeiboParser:
         try:
             post = {
                 "id": str(mblog.get("id", "")),
+                "bid": str(mblog.get("bid", "")),
                 "user_id": str(mblog.get("user", {}).get("id", "")),
                 "text": self._clean_text(mblog.get("text", "")),
                 "created_at": self._parse_time(mblog.get("created_at", "")),
@@ -106,6 +107,7 @@ class WeiboParser:
                 "location": mblog.get("geo", {}).get("name", ""),
                 "topic_ids": self._extract_topics(mblog.get("text", "")),
                 "at_users": self._extract_at_users(mblog.get("text", "")),
+                "is_long_text": mblog.get("isLongText", False),
             }
             
             if mblog.get("retweeted_status"):
