@@ -23,6 +23,7 @@ from crawl4weibo import WeiboClient
 
 # 初始化（无需Cookie）
 client = WeiboClient()
+test_uid = "2656274875"
 
 # 获取用户信息
 user = client.get_user_by_uid(test_uid)
