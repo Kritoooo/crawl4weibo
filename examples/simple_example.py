@@ -22,7 +22,7 @@ def main():
     client = WeiboClient()
     
     # 测试用户
-    test_uid = "1195230310"  # 微博官方
+    test_uid = "2656274875"  # 央视新闻
     
     try:
         # 获取用户信息
@@ -34,7 +34,9 @@ def main():
         
         # 获取微博
         print(f"\n📄 获取微博...")
-        posts = client.get_user_posts(test_uid, page=1)
+        posts_page1 = client.get_user_posts(test_uid, page=1)
+        posts_page2 = client.get_user_posts(test_uid, page=2)
+        posts = (posts_page1 or []) + (posts_page2 or [])
         print(f"获取到 {len(posts)} 条微博")
         
         for i, post in enumerate(posts[:3], 1):
