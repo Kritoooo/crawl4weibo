@@ -22,7 +22,7 @@ def main():
     client = WeiboClient()
     
     # 测试用户
-    test_uid = "2656274875"  # 微博官方
+    test_uid = "2656274875"  # 央视新闻
     
     try:
         # 获取用户信息
