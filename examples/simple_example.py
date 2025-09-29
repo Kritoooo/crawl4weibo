@@ -43,6 +43,15 @@ def main():
             print(f"  {i}. {post.text[:50]}...")
             print(f"     点赞: {post.attitudes_count} | 评论: {post.comments_count}")
         
+        # 根据微博ID获取单条微博
+        if posts:
+            print(f"\n📋 根据ID获取单条微博...")
+            first_post_bid = posts[0].bid
+            print(f"获取微博ID: {first_post_bid}")
+            single_post = client.get_post_by_bid(first_post_bid)
+            print(f"内容: {single_post.text[:50]}...")
+            # print(f"图片数量: {len(single_post.pic_urls)}")
+        
         # 搜索用户
         print(f"\n🔍 搜索用户...")
         users = client.search_users("新浪")
