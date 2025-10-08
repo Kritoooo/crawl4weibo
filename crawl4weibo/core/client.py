@@ -132,7 +132,7 @@ class WeiboClient:
         self.logger.info(f"获取用户: {user.screen_name}")
         return user
     
-    def get_user_posts(self, uid: str, page: int = 1) -> List[Post]:
+    def get_user_posts(self, uid: str, page: int = 1, expand: bool = False) -> List[Post]:
         """获取用户微博"""
         time.sleep(random.uniform(1, 3))  # 请求间隔
         
@@ -146,7 +146,16 @@ class WeiboClient:
         
         posts_data = self.parser.parse_posts(data)
         posts = [Post.from_dict(post_data) for post_data in posts_data]
-        
+        for post in posts:
+            if post.is_long_text and expand:
+                try:
+                    long_post = self.get_post_by_bid(post.bid)
+                    post.text = long_post.text
+                    post.pic_urls = long_post.pic_urls
+                    post.video_url = long_post.video_url
+                except Exception as e:
+                    self.logger.warning(f"展开长微博失败 {post.bid}: {e}")
+
         self.logger.info(f"获取到 {len(posts)} 条微博")
         return posts
     
