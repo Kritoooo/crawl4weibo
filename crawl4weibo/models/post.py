@@ -57,7 +57,7 @@ class Post:
             "location": data.get("location", ""),
             "topic_ids": data.get("topic_ids", []),
             "at_users": data.get("at_users", []),
-            "is_long_text": data.get("isLongText", False),
+            "is_long_text": data.get("is_long_text", False),
             "raw_data": data,
         }
         return cls(**post_data)

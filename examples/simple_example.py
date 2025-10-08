@@ -34,8 +34,8 @@ def main():
         
         # 获取微博
         print(f"\n📄 获取微博...")
-        posts_page1 = client.get_user_posts(test_uid, page=1)
-        posts_page2 = client.get_user_posts(test_uid, page=2)
+        posts_page1 = client.get_user_posts(test_uid, page=1, expand=True)
+        posts_page2 = client.get_user_posts(test_uid, page=2, expand=True)
         posts = (posts_page1 or []) + (posts_page2 or [])
         print(f"获取到 {len(posts)} 条微博")
         
