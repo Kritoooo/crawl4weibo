@@ -159,6 +159,22 @@ class WeiboClient:
         self.logger.info(f"获取到 {len(posts)} 条微博")
         return posts
     
+    def get_post_by_bid(self, bid: str) -> Post:
+        """根据微博ID获取单条微博"""
+        url = "https://m.weibo.cn/statuses/show"
+        params = {"id": bid}
+
+        data = self._request(url, params)
+        
+        if not data.get("data"):
+            raise ParseError(f"未找到微博 {bid}")
+
+        post_data = self.parser._parse_single_post(data["data"])
+        if not post_data:
+            raise ParseError(f"解析微博数据失败 {bid}")
+            
+        return Post.from_dict(post_data)
+    
     def search_users(self, query: str, page: int = 1, count: int = 10) -> List[User]:
         """搜索用户"""
         time.sleep(random.uniform(1, 3))

@@ -15,6 +15,7 @@ class Post:
     """Weibo post model"""
     
     id: str
+    bid: str
     user_id: str
     text: str = ""
     created_at: Optional[datetime] = None
@@ -29,6 +30,7 @@ class Post:
     location: str = ""
     topic_ids: List[str] = field(default_factory=list)
     at_users: List[str] = field(default_factory=list)
+    is_long_text: bool = False
     raw_data: Dict[str, Any] = field(default_factory=dict)
     
     @classmethod
@@ -40,6 +42,7 @@ class Post:
         
         post_data = {
             "id": str(data.get("id", "")),
+            "bid": data.get("bid", ""),
             "user_id": str(data.get("user_id", "")),
             "text": data.get("text", ""),
             "created_at": data.get("created_at"),

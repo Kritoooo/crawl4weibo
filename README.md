@@ -23,27 +23,38 @@ from crawl4weibo import WeiboClient
 
 # 初始化（无需Cookie）
 client = WeiboClient()
+test_uid = "2656274875"
 
 # 获取用户信息
-user = client.get_user_by_uid("1195230310")
-print(f"用户: {user.screen_name}")
-print(f"粉丝: {user.followers_count:,}")
+user = client.get_user_by_uid(test_uid)
+print(f"用户名: {user.screen_name}")
+print(f"粉丝数: {user.followers_count}")
+print(f"微博数: {user.posts_count}")
 
 # 获取微博
-posts = client.get_user_posts("1195230310")
-for post in posts:
-    print(f"微博: {post.text[:50]}...")
-    print(f"点赞: {post.attitudes_count}")
+posts_page1 = client.get_user_posts(test_uid, page=1)
+posts_page2 = client.get_user_posts(test_uid, page=2)
+posts = (posts_page1 or []) + (posts_page2 or [])
+print(f"获取到 {len(posts)} 条微博")
+for i, post in enumerate(posts[:3], 1):
+    print(f"  {i}. {post.text[:50]}...")
+    print(f"     点赞: {post.attitudes_count} | 评论: {post.comments_count}")
+
+# 根据微博ID获取单条微博
+post = client.get_post_by_bid("Q6FyDtbQc")
+print(f"微博内容: {post.text[:50]}")
+# print(f"发布时间: {post.created_at}")
+# print(f"图片数量: {len(post.pic_urls)}")
 
 # 搜索用户
-users = client.search_users("技术博主")
+users = client.search_users("新浪")
 for user in users:
-    print(f"用户: {user.screen_name}")
-
-# 搜索微博  
-posts = client.search_posts("人工智能")
+    print(f"  - {user.screen_name} (粉丝: {user.followers_count})")
+        
+# 搜索微博
+posts = client.search_posts("人工智能", page=1)
 for post in posts:
-    print(f"内容: {post.text[:50]}...")
+    print(f"  - {post.text[:50]}...")
 ```
 
 ## API参考
@@ -59,6 +70,7 @@ WeiboClient(cookies=None, log_level="INFO", log_file=None)
 
 - `get_user_by_uid(uid)` - 获取用户信息
 - `get_user_posts(uid, page=1)` - 获取用户微博
+- `get_post_by_bid(bid)` - 根据微博ID获取单条微博
 - `search_users(query, page=1, count=10)` - 搜索用户
 - `search_posts(query, page=1)` - 搜索微博
 
