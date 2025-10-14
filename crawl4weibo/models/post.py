@@ -1,19 +1,18 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 Post model for crawl4weibo
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class Post:
     """Weibo post model"""
-    
+
     id: str
     bid: str
     user_id: str
@@ -32,14 +31,14 @@ class Post:
     at_users: List[str] = field(default_factory=list)
     is_long_text: bool = False
     raw_data: Dict[str, Any] = field(default_factory=dict)
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Post":
         """Create Post instance from dictionary"""
         retweeted_status = None
         if data.get("retweeted_status"):
             retweeted_status = cls.from_dict(data["retweeted_status"])
-        
+
         post_data = {
             "id": str(data.get("id", "")),
             "bid": data.get("bid", ""),
@@ -61,7 +60,7 @@ class Post:
             "raw_data": data,
         }
         return cls(**post_data)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert Post instance to dictionary"""
         result = {
@@ -80,8 +79,8 @@ class Post:
             "topic_ids": self.topic_ids,
             "at_users": self.at_users,
         }
-        
+
         if self.retweeted_status:
             result["retweeted_status"] = self.retweeted_status.to_dict()
-            
+
         return result

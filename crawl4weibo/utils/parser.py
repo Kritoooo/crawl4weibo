@@ -1,14 +1,12 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 HTML/JSON parsing utilities for crawl4weibo
 """
 
 import re
-from typing import List, Dict, Any, Optional
 from datetime import datetime
-from lxml import etree
+from typing import Any, Dict, List, Optional
 
 from ..exceptions.base import ParseError
 from .logger import get_logger
@@ -16,26 +14,26 @@ from .logger import get_logger
 
 class WeiboParser:
     """Parser for Weibo API responses and HTML content"""
-    
+
     def __init__(self):
         self.logger = get_logger()
-    
+
     def parse_user_info(self, response_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Parse user information from API response
-        
+
         Args:
             response_data: Raw API response data
-            
+
         Returns:
             Dict containing parsed user information
         """
         try:
             if "data" not in response_data or "userInfo" not in response_data["data"]:
                 raise ParseError("Invalid user info response format")
-            
+
             user_info = response_data["data"]["userInfo"]
-            
+
             return {
                 "id": str(user_info.get("id", "")),
                 "screen_name": user_info.get("screen_name", ""),
@@ -52,24 +50,24 @@ class WeiboParser:
         except Exception as e:
             self.logger.error(f"Failed to parse user info: {e}")
             raise ParseError(f"Failed to parse user info: {e}")
-    
+
     def parse_posts(self, response_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Parse posts from API response
-        
+
         Args:
             response_data: Raw API response data
-            
+
         Returns:
             List of parsed post dictionaries
         """
         try:
             if "data" not in response_data or "cards" not in response_data["data"]:
                 return []
-            
+
             posts = []
             cards = response_data["data"]["cards"]
-            
+
             for card in cards:
                 if card.get("card_type") == 9 and "mblog" in card:
                     post_data = self._parse_single_post(card["mblog"])
@@ -82,14 +80,13 @@ class WeiboParser:
                             post_data = self._parse_single_post(group_card["mblog"])
                             if post_data:
                                 posts.append(post_data)
-            
+
             return posts
         except Exception as e:
             self.logger.error(f"Failed to parse posts: {e}")
             raise ParseError(f"Failed to parse posts: {e}")
-    
+
     def _parse_single_post(self, mblog: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Parse a single post from mblog data"""
         try:
             post = {
                 "id": str(mblog.get("id", "")),
@@ -109,29 +106,29 @@ class WeiboParser:
                 "at_users": self._extract_at_users(mblog.get("text", "")),
                 "is_long_text": mblog.get("isLongText", False),
             }
-            
+
             if mblog.get("retweeted_status"):
-                post["retweeted_status"] = self._parse_single_post(mblog["retweeted_status"])
-            
+                post["retweeted_status"] = self._parse_single_post(
+                    mblog["retweeted_status"]
+                )
+
             return post
         except Exception as e:
             self.logger.error(f"Failed to parse single post: {e}")
             return None
-    
+
     def _clean_text(self, text: str) -> str:
-        """Remove HTML tags and clean text"""
         if not text:
             return ""
-        
-        text = re.sub(r'<[^>]+>', '', text)
-        text = re.sub(r'\s+', ' ', text).strip()
+
+        text = re.sub(r"<[^>]+>", "", text)
+        text = re.sub(r"\s+", " ", text).strip()
         return text
-    
+
     def _parse_time(self, time_str: str) -> Optional[datetime]:
-        """Parse time string to datetime"""
         if not time_str:
             return None
-        
+
         try:
             return datetime.strptime(time_str, "%a %b %d %H:%M:%S %z %Y")
         except ValueError:
@@ -140,38 +137,34 @@ class WeiboParser:
             except ValueError:
                 self.logger.warning(f"Failed to parse time: {time_str}")
                 return None
-    
+
     def _extract_pic_urls(self, mblog: Dict[str, Any]) -> List[str]:
-        """Extract picture URLs from post"""
         pic_urls = []
-        
+
         if "pics" in mblog:
             for pic in mblog["pics"]:
                 if "large" in pic and "url" in pic["large"]:
                     pic_urls.append(pic["large"]["url"])
-        
+
         return pic_urls
-    
+
     def _extract_video_url(self, mblog: Dict[str, Any]) -> str:
-        """Extract video URL from post"""
         if "page_info" in mblog and mblog["page_info"].get("type") == "video":
             media_info = mblog["page_info"].get("media_info", {})
             return media_info.get("stream_url", "")
-        
+
         return ""
-    
+
     def _extract_topics(self, text: str) -> List[str]:
-        """Extract topic hashtags from text"""
         if not text:
             return []
-        
-        topics = re.findall(r'#([^#]+)#', text)
+
+        topics = re.findall(r"#([^#]+)#", text)
         return [topic.strip() for topic in topics if topic.strip()]
-    
+
     def _extract_at_users(self, text: str) -> List[str]:
-        """Extract @mentioned users from text"""
         if not text:
             return []
-        
-        mentions = re.findall(r'@([^\s@]+)', text)
+
+        mentions = re.findall(r"@([^\s@]+)", text)
         return [mention.strip() for mention in mentions if mention.strip()]

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "crawl4weibo"
 description = "A professional Weibo crawler library"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
     {name = "Kritoooo", email = "krito2023@gmail.com"},
@@ -17,7 +17,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -47,12 +46,55 @@ dev = [
 where = ["."]
 include = ["crawl4weibo*"]
 
-[tool.black]
+[tool.ruff]
 line-length = 88
-target-version = ['py37']
+target-version = "py37"
 
-[tool.isort]
-profile = "black"
-line_length = 88
+[tool.ruff.lint]
+# Enable essential rules - equivalent to flake8, isort functionality
+select = [
+    "E",     # pycodestyle errors
+    "F",     # pyflakes
+    "I",     # isort
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "C4",    # flake8-comprehensions
+    "SIM",   # flake8-simplify
+]
+ignore = [
+    "E203",    # whitespace before ':'
+    "B904",    # Within `except` clause, raise exceptions with `raise ... from err`
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint.isort]
+known-first-party = ["crawl4weibo"]
+
 
 [tool.setuptools_scm]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = ["--verbose", "--tb=short"]
+markers = [
+    "unit: Unit tests that don't make external API calls",
+    "integration: Integration tests that make real API calls",
+    "slow: Slow running tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.4.4",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.14.0",
+]
