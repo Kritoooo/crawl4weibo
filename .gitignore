@@ -155,3 +155,11 @@ cache/
 .cache/
 cookies/
 screenshots/
+docs/CI-CD.md
+
+# Security reports
+bandit-report.json
+safety-report.json
+
+# Coverage reports
+cover/

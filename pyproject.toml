@@ -56,3 +56,12 @@ profile = "black"
 line_length = 88
 
 [tool.setuptools_scm]
+
+[dependency-groups]
+dev = [
+    "black>=23.3.0",
+    "flake8>=5.0.4",
+    "isort>=5.11.5",
+    "pytest>=7.4.4",
+    "pytest-cov>=4.1.0",
+]

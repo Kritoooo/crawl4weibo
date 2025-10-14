@@ -6,14 +6,14 @@ User model for crawl4weibo
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, Optional
 
 
 @dataclass
 class User:
     """Weibo user model"""
-    
+
     id: str
     screen_name: str = ""
     gender: str = ""
@@ -32,7 +32,7 @@ class User:
     registration_time: Optional[datetime] = None
     sunshine_credit: str = ""
     raw_data: Dict[str, Any] = field(default_factory=dict)
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "User":
         """Create User instance from dictionary"""
@@ -57,7 +57,7 @@ class User:
             "raw_data": data,
         }
         return cls(**user_data)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert User instance to dictionary"""
         return {
