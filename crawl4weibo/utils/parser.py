@@ -87,7 +87,6 @@ class WeiboParser:
             raise ParseError(f"Failed to parse posts: {e}")
 
     def _parse_single_post(self, mblog: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Parse a single post from mblog data"""
         try:
             post = {
                 "id": str(mblog.get("id", "")),
@@ -119,7 +118,6 @@ class WeiboParser:
             return None
 
     def _clean_text(self, text: str) -> str:
-        """Remove HTML tags and clean text"""
         if not text:
             return ""
 
@@ -128,7 +126,6 @@ class WeiboParser:
         return text
 
     def _parse_time(self, time_str: str) -> Optional[datetime]:
-        """Parse time string to datetime"""
         if not time_str:
             return None
 
@@ -142,7 +139,6 @@ class WeiboParser:
                 return None
 
     def _extract_pic_urls(self, mblog: Dict[str, Any]) -> List[str]:
-        """Extract picture URLs from post"""
         pic_urls = []
 
         if "pics" in mblog:
@@ -153,7 +149,6 @@ class WeiboParser:
         return pic_urls
 
     def _extract_video_url(self, mblog: Dict[str, Any]) -> str:
-        """Extract video URL from post"""
         if "page_info" in mblog and mblog["page_info"].get("type") == "video":
             media_info = mblog["page_info"].get("media_info", {})
             return media_info.get("stream_url", "")
@@ -161,7 +156,6 @@ class WeiboParser:
         return ""
 
     def _extract_topics(self, text: str) -> List[str]:
-        """Extract topic hashtags from text"""
         if not text:
             return []
 
@@ -169,7 +163,6 @@ class WeiboParser:
         return [topic.strip() for topic in topics if topic.strip()]
 
     def _extract_at_users(self, text: str) -> List[str]:
-        """Extract @mentioned users from text"""
         if not text:
             return []
 

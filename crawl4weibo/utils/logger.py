@@ -50,5 +50,4 @@ def setup_logger(name="crawl4weibo", level=logging.INFO, log_file=None):
 
 
 def get_logger(name="crawl4weibo"):
-    """Get existing logger or create new one"""
     return logging.getLogger(name)

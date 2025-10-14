@@ -40,10 +40,8 @@ class WeiboClient:
             level=getattr(__import__("logging"), log_level.upper()), log_file=log_file
         )
 
-        # 创建session
         self.session = requests.Session()
 
-        # 设置经过验证的headers
         default_user_agent = (
             "Mozilla/5.0 (Linux; Android 13; SM-G9980) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -58,20 +56,16 @@ class WeiboClient:
             }
         )
 
-        # 添加Cookie（如果提供）
         if cookies:
             self._set_cookies(cookies)
 
-        # 初始化session
         self._init_session()
 
-        # 解析器
         self.parser = WeiboParser()
 
         self.logger.info("WeiboClient initialized successfully")
 
     def _set_cookies(self, cookies: Union[str, Dict[str, str]]):
-        """设置cookies"""
         if isinstance(cookies, str):
             cookie_dict = {}
             for pair in cookies.split(";"):
@@ -83,7 +77,6 @@ class WeiboClient:
             self.session.cookies.update(cookies)
 
     def _init_session(self):
-        """初始化session，获取首页cookie"""
         try:
             self.logger.debug("初始化session...")
             self.session.get("https://m.weibo.cn/", timeout=5)
@@ -94,7 +87,6 @@ class WeiboClient:
     def _request(
         self, url: str, params: Dict[str, Any], max_retries: int = 3
     ) -> Dict[str, Any]:
-        """发送请求并处理重试"""
         for attempt in range(1, max_retries + 1):
             try:
                 response = self.session.get(url, params=params, timeout=5)
@@ -128,7 +120,6 @@ class WeiboClient:
         raise CrawlError("达到最大重试次数")
 
     def get_user_by_uid(self, uid: str) -> User:
-        """根据UID获取用户信息"""
         url = "https://m.weibo.cn/api/container/getIndex"
         params = {"containerid": f"100505{uid}"}
 
@@ -146,8 +137,7 @@ class WeiboClient:
     def get_user_posts(
         self, uid: str, page: int = 1, expand: bool = False
     ) -> List[Post]:
-        """获取用户微博"""
-        time.sleep(random.uniform(1, 3))  # 请求间隔
+        time.sleep(random.uniform(1, 3))
 
         url = "https://m.weibo.cn/api/container/getIndex"
         params = {"containerid": f"107603{uid}", "page": page}
@@ -173,7 +163,6 @@ class WeiboClient:
         return posts
 
     def get_post_by_bid(self, bid: str) -> Post:
-        """根据微博ID获取单条微博"""
         url = "https://m.weibo.cn/statuses/show"
         params = {"id": bid}
 
@@ -189,7 +178,6 @@ class WeiboClient:
         return Post.from_dict(post_data)
 
     def search_users(self, query: str, page: int = 1, count: int = 10) -> List[User]:
-        """搜索用户"""
         time.sleep(random.uniform(1, 3))
 
         url = "https://m.weibo.cn/api/container/getIndex"
@@ -216,7 +204,6 @@ class WeiboClient:
         return users
 
     def search_posts(self, query: str, page: int = 1) -> List[Post]:
-        """搜索微博"""
         time.sleep(random.uniform(1, 3))
 
         url = "https://m.weibo.cn/api/container/getIndex"
