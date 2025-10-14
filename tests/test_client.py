@@ -1,4 +1,5 @@
 """Tests for WeiboClient"""
+
 import pytest
 
 from crawl4weibo import Post, User, WeiboClient
@@ -29,9 +30,9 @@ class TestWeiboClient:
 
         for method in methods:
             assert hasattr(client, method), f"Method {method} should exist"
-            assert callable(
-                getattr(client, method)
-            ), f"Method {method} should be callable"
+            assert callable(getattr(client, method)), (
+                f"Method {method} should be callable"
+            )
 
     def test_imports_work(self):
         """Test that imports work correctly"""

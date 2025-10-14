@@ -6,13 +6,11 @@
 - [开发工作流](#开发工作流)
 - [测试指南](#测试指南)
 - [代码质量](#代码质量)
-- [CI/CD使用方法](#cicd使用方法)
-- [发布流程](#发布流程)
 
 ## 开发环境设置
 
 ### 环境要求
-- Python 3.7+
+- Python 3.8+
 - uv (推荐的包管理工具)
 
 ### 快速开始
@@ -30,13 +28,11 @@ uv run pytest tests/ -v
 
 ### 开发依赖说明
 ```toml
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "pytest>=6.0",      # 测试框架
-    "pytest-cov",       # 测试覆盖率
-    "black",            # 代码格式化
-    "isort",            # 导入排序
-    "flake8",           # 代码质量检查
+    "pytest>=7.4.4",    # 测试框架
+    "pytest-cov>=4.1.0", # 测试覆盖率
+    "ruff>=0.14.0",      # 现代化的快速linter和formatter
 ]
 ```
 
@@ -92,10 +88,9 @@ git checkout -b feature/your-feature-name
 uv run pytest tests/ -m unit  # 快速单元测试
 
 # 3. 提交前完整检查
-uv run black crawl4weibo tests/    # 格式化代码
-uv run isort crawl4weibo tests/    # 排序导入
-uv run flake8 crawl4weibo          # 检查代码质量
-uv run pytest tests/               # 运行所有测试
+uv run ruff check crawl4weibo --fix  # 检查并自动修复问题
+uv run ruff format crawl4weibo       # 格式化代码
+uv run pytest tests/                 # 运行所有测试
 
 # 4. 提交代码
 git add .
@@ -193,168 +188,62 @@ class TestWeiboClientIntegration:
 ## 代码质量
 
 ### 代码风格
-项目使用以下工具确保代码质量：
+项目使用 **Ruff** 作为统一的代码质量工具，提供极快的linting和formatting：
 
-#### Black - 代码格式化
+#### Ruff - 统一的代码质量工具
 ```bash
-# 检查格式
-uv run black --check crawl4weibo tests/
+# 代码检查
+uv run ruff check crawl4weibo
 
-# 自动格式化
-uv run black crawl4weibo tests/
-```
+# 自动修复问题
+uv run ruff check crawl4weibo --fix
 
-#### isort - 导入排序
-```bash
-# 检查导入排序
-uv run isort --check-only crawl4weibo tests/
+# 代码格式化
+uv run ruff format crawl4weibo
 
-# 自动排序
-uv run isort crawl4weibo tests/
-```
-
-#### flake8 - 代码检查
-```bash
-# 运行代码检查
-uv run flake8 crawl4weibo
+# 检查格式（不修改）
+uv run ruff format crawl4weibo --check
 ```
 
 ### 配置文件
-代码质量配置在 `pyproject.toml` 中：
+Ruff配置在 `pyproject.toml` 中：
 ```toml
-[tool.black]
+[tool.ruff]
 line-length = 88
-target-version = ['py37']
+target-version = "py38"
 
-[tool.isort]
-profile = "black"
-line_length = 88
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "F",     # pyflakes
+    "I",     # isort
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "C4",    # flake8-comprehensions
+    "SIM",   # flake8-simplify
+]
+
+[tool.ruff.format]
+quote-style = "double"
 ```
 
-## CI/CD使用方法
+## 开发最佳实践
 
-### GitHub Actions 工作流
-
-项目包含3个主要的CI/CD工作流：
-
-#### 1. 主CI流水线 (`.github/workflows/ci.yml`)
-**触发条件：**
-- 推送到 `main` 或 `develop` 分支
-- 向 `main` 分支创建PR
-- 发布release
-
-**执行步骤：**
-1. 多Python版本测试 (3.7-3.11)
-2. 代码质量检查 (flake8, black, isort)
-3. 运行测试套件
-4. 生成覆盖率报告
-5. 构建Python包
-6. 自动发布到PyPI（仅在release时）
-
-#### 2. 发布流水线 (`.github/workflows/release.yml`)
-**触发条件：**
-- 推送Git标签 (`v*`)
-
-**执行步骤：**
-1. 构建Python包
-2. 创建GitHub Release
-3. 自动发布到PyPI
-
-#### 3. 代码质量检查 (`.github/workflows/code-quality.yml`)
-**执行检查：**
-- flake8 语法检查
-- black 格式检查
-- isort 导入排序检查
-- bandit 安全扫描
-- safety 依赖漏洞检查
-
-### 本地CI检查
-在推送代码前，可以本地运行相同的检查：
+### 提交前检查
+推送代码前的完整检查流程：
 ```bash
-# 完整的CI检查流程
-uv sync --dev                      # 安装依赖
-uv run black crawl4weibo tests/    # 格式化
-uv run isort crawl4weibo tests/    # 排序导入
-uv run flake8 crawl4weibo          # 代码检查
-uv run pytest tests/ -v           # 运行测试
-uv build                           # 构建包
-```
+# 1. 安装依赖
+uv sync --dev
 
-### GitHub仓库设置
+# 2. 代码质量检查和修复
+uv run ruff check crawl4weibo --fix
+uv run ruff format crawl4weibo
 
-#### 必要的Secrets
-在 `Settings → Secrets and variables → Actions` 中添加：
-```
-PYPI_API_TOKEN=your_pypi_token_here
-```
+# 3. 运行测试
+uv run pytest tests/ -v
 
-#### 获取PyPI Token
-1. 登录 [PyPI](https://pypi.org/)
-2. 进入 Account Settings
-3. 创建API Token
-4. 复制token到GitHub Secrets
-
-## 发布流程
-
-### 语义化版本
-遵循 [语义化版本](https://semver.org/) 规范：
-- `v1.0.0` - 主版本（破坏性更改）
-- `v0.1.0` - 次版本（新功能，向后兼容）
-- `v0.0.1` - 补丁版本（bug修复，向后兼容）
-
-### 发布步骤
-1. **准备发布**
-   ```bash
-   # 确保在main分支且代码最新
-   git checkout main
-   git pull origin main
-   
-   # 运行完整测试
-   uv run pytest tests/ -v
-   ```
-
-2. **更新版本**
-   - 手动更新 `pyproject.toml` 中的版本号（如果使用 `dynamic = ["version"]`，则自动从git标签获取）
-
-3. **创建标签并推送**
-   ```bash
-   # 提交版本更改（如果有）
-   git add pyproject.toml
-   git commit -m "bump version to 0.1.5"
-   
-   # 创建标签
-   git tag v0.1.5
-   
-   # 推送代码和标签
-   git push origin main
-   git push origin v0.1.5
-   ```
-
-4. **自动发布**
-   - GitHub Actions 自动触发发布流水线
-   - 自动创建 GitHub Release
-   - 自动发布到 PyPI
-
-### 发布检查清单
-- [ ] 所有测试通过
-- [ ] 代码质量检查通过
-- [ ] 文档更新完成
-- [ ] CHANGELOG更新（如果有）
-- [ ] 版本号更新正确
-- [ ] 创建并推送标签
-- [ ] 确认GitHub Release创建成功
-- [ ] 确认PyPI发布成功
-
-### 回滚发布
-如果发现发布有问题：
-```bash
-# 删除本地标签
-git tag -d v0.1.5
-
-# 删除远程标签
-git push origin --delete v0.1.5
-
-# 在PyPI删除对应版本（需要手动操作）
+# 4. 构建包验证（可选）
+uv build
 ```
 
 ## 常见问题
@@ -370,9 +259,9 @@ uv run pytest tests/test_file.py::test_function -v
 
 ### 代码格式问题
 ```bash
-# 自动修复格式问题
-uv run black crawl4weibo tests/
-uv run isort crawl4weibo tests/
+# 使用ruff自动修复
+uv run ruff check crawl4weibo --fix
+uv run ruff format crawl4weibo
 ```
 
 ### 依赖问题
@@ -382,11 +271,6 @@ rm -rf .venv
 uv venv
 uv sync --dev
 ```
-
-### CI失败
-1. 查看GitHub Actions日志
-2. 本地复现相同的检查步骤
-3. 修复问题后重新推送
 
 ## 贡献指南
 
@@ -400,8 +284,7 @@ uv sync --dev
 ### Code Review检查点
 - 代码功能正确性
 - 测试覆盖率
-- 代码风格一致性
-- 文档完整性
+- 代码风格一致性（通过ruff检查）
 - 性能影响
 - 向后兼容性
 

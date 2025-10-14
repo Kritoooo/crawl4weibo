@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 微博爬虫客户端 - 基于实际测试成功的代码

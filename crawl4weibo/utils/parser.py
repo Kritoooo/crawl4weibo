@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 HTML/JSON parsing utilities for crawl4weibo
@@ -8,8 +7,6 @@ HTML/JSON parsing utilities for crawl4weibo
 import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-
-from lxml import etree
 
 from ..exceptions.base import ParseError
 from .logger import get_logger

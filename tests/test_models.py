@@ -1,4 +1,5 @@
 """Tests for data models"""
+
 import pytest
 
 from crawl4weibo.models.post import Post
