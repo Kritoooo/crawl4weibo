@@ -11,6 +11,7 @@ from unittest.mock import Mock, patch
 import pytest
 import requests
 
+from crawl4weibo.exceptions.base import NetworkError
 from crawl4weibo.models.post import Post
 from crawl4weibo.utils.downloader import ImageDownloader
 
@@ -92,8 +93,8 @@ class TestImageDownloader:
             
             url = "https://example.com/test.jpg"
             
-            result = downloader.download_image(url, "test.jpg")
-            assert result is None
+            with pytest.raises(NetworkError):
+                downloader.download_image(url, "test.jpg")
 
     def test_download_post_images(self):
         """Test downloading images from a post"""
@@ -147,6 +148,31 @@ class TestImageDownloader:
                 assert "2" in results
                 assert mock_download.call_count == 2
 
+    def test_download_post_images_with_network_error(self):
+        """Test downloading post images with network errors"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            downloader = ImageDownloader(download_dir=temp_dir, max_retries=1)
+            
+            pic_urls = [
+                "https://example.com/img1.jpg",
+                "https://example.com/img2.jpg"
+            ]
+            post_id = "12345"
+            
+            with patch.object(downloader, 'download_image') as mock_download:
+                def side_effect(url, filename=None, subdir=None):
+                    if "img1" in url:
+                        raise NetworkError("Network error")
+                    return f"{temp_dir}/test_image.jpg"
+                
+                mock_download.side_effect = side_effect
+                
+                results = downloader.download_post_images(pic_urls, post_id)
+                
+                assert len(results) == 2
+                assert results[pic_urls[0]] is None
+                assert results[pic_urls[1]] is not None
+
     def test_get_download_stats(self):
         """Test getting download statistics"""
         downloader = ImageDownloader()
@@ -155,7 +181,7 @@ class TestImageDownloader:
         download_results = {
             "post1": {
                 "url1": "/path/to/image1.jpg",
-                "url2": None,  # Failed download
+                "url2": None,
             },
             "post2": {
                 "url3": "/path/to/image3.jpg",
@@ -180,14 +206,12 @@ class TestImageDownloaderIntegration:
         try:
             client = WeiboClient()
             
-            # Get a post with images
             posts = client.get_user_posts("2656274875", page=1)
             posts_with_images = [post for post in posts if post.pic_urls]
             
             if not posts_with_images:
                 pytest.skip("No posts with images found for testing")
                 
-            # Test with a single post
             post = posts_with_images[0]
             
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -197,11 +221,9 @@ class TestImageDownloaderIntegration:
                     subdir="test"
                 )
                 
-                # Verify results structure
                 assert isinstance(results, dict)
                 assert len(results) == len(post.pic_urls)
                 
-                # Check if any downloads were successful
                 successful_downloads = sum(1 for path in results.values() if path is not None)
                 assert successful_downloads >= 0  # At least attempt was made
                 

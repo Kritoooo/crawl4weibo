@@ -130,6 +130,8 @@ class ImageDownloader:
 
             return None
 
+        except NetworkError:
+            raise
         except Exception as e:
             self.logger.error(f"Error downloading image {url}: {e}")
             return None
@@ -165,8 +167,12 @@ class ImageDownloader:
                 time.sleep(delay)
 
             filename = f"{post_id}_{i + 1:02d}_{self._generate_filename(url)}"
-            downloaded_path = self.download_image(url, filename, post_subdir)
-            results[url] = downloaded_path
+            try:
+                downloaded_path = self.download_image(url, filename, post_subdir)
+                results[url] = downloaded_path
+            except NetworkError as e:
+                self.logger.warning(f"Network error downloading {url}: {e}")
+                results[url] = None
 
         successful_downloads = sum(1 for path in results.values() if path is not None)
         self.logger.info(
