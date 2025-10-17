@@ -19,11 +19,13 @@ from .exceptions.base import (
 )
 from .models.post import Post
 from .models.user import User
+from .utils.downloader import ImageDownloader
 
 __all__ = [
     "WeiboClient",
     "User",
     "Post",
+    "ImageDownloader",
     "CrawlError",
     "AuthenticationError",
     "RateLimitError",

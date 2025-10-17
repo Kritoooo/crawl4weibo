@@ -156,6 +156,7 @@ cache/
 cookies/
 screenshots/
 docs/CI-CD.md
+example_downloads/
 
 # Security reports
 bandit-report.json

@@ -6,6 +6,7 @@
 
 import random
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import requests
@@ -13,6 +14,7 @@ import requests
 from ..exceptions.base import CrawlError, NetworkError, ParseError, UserNotFoundError
 from ..models.post import Post
 from ..models.user import User
+from ..utils.downloader import ImageDownloader
 from ..utils.logger import setup_logger
 from ..utils.parser import WeiboParser
 
@@ -62,6 +64,10 @@ class WeiboClient:
         self._init_session()
 
         self.parser = WeiboParser()
+        self.downloader = ImageDownloader(
+            session=self.session,
+            download_dir="./weibo_images",
+        )
 
         self.logger.info("WeiboClient initialized successfully")
 
@@ -215,3 +221,96 @@ class WeiboClient:
 
         self.logger.info(f"搜索到 {len(posts)} 条微博")
         return posts
+
+    def download_post_images(
+        self,
+        post: Post,
+        download_dir: Optional[str] = None,
+        subdir: Optional[str] = None,
+    ) -> Dict[str, Optional[str]]:
+        """
+        Download images from a single post
+
+        Args:
+            post: Post object containing image URLs
+            download_dir: Custom download directory (optional)
+            subdir: Subdirectory name for organizing downloads
+
+        Returns:
+            Dictionary mapping image URLs to downloaded file paths
+        """
+        if download_dir:
+            self.downloader.download_dir = Path(download_dir)
+            self.downloader.download_dir.mkdir(parents=True, exist_ok=True)
+
+        if not post.pic_urls:
+            self.logger.info(f"Post {post.id} has no images to download")
+            return {}
+
+        return self.downloader.download_post_images(post.pic_urls, post.id, subdir)
+
+    def download_posts_images(
+        self,
+        posts: List[Post],
+        download_dir: Optional[str] = None,
+        subdir: Optional[str] = None,
+    ) -> Dict[str, Dict[str, Optional[str]]]:
+        """
+        Download images from multiple posts
+
+        Args:
+            posts: List of Post objects
+            download_dir: Custom download directory (optional)
+            subdir: Subdirectory name for organizing downloads
+
+        Returns:
+            Dictionary mapping post IDs to their download results
+        """
+        if download_dir:
+            self.downloader.download_dir = Path(download_dir)
+            self.downloader.download_dir.mkdir(parents=True, exist_ok=True)
+
+        posts_with_images = [post for post in posts if post.pic_urls]
+        if not posts_with_images:
+            self.logger.info("No posts with images found")
+            return {}
+
+        self.logger.info(
+            f"Found {len(posts_with_images)} posts with images "
+            f"out of {len(posts)} total posts"
+        )
+        return self.downloader.download_posts_images(posts_with_images, subdir)
+
+    def download_user_posts_images(
+        self,
+        uid: str,
+        pages: int = 1,
+        download_dir: Optional[str] = None,
+        expand_long_text: bool = False,
+    ) -> Dict[str, Dict[str, Optional[str]]]:
+        """
+        Download images from user's posts
+
+        Args:
+            uid: User ID
+            pages: Number of pages to fetch
+            download_dir: Custom download directory (optional)
+            expand_long_text: Whether to expand long text posts
+
+        Returns:
+            Dictionary mapping post IDs to their download results
+        """
+        all_posts = []
+
+        for page in range(1, pages + 1):
+            posts = self.get_user_posts(uid, page=page, expand=expand_long_text)
+            if not posts:
+                break
+            all_posts.extend(posts)
+
+            if page < pages:
+                time.sleep(random.uniform(2, 4))
+
+        subdir = f"user_{uid}"
+
+        return self.download_posts_images(all_posts, download_dir, subdir)
