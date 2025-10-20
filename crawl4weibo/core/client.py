@@ -7,7 +7,7 @@
 import random
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import requests
 
@@ -17,6 +17,7 @@ from ..models.user import User
 from ..utils.downloader import ImageDownloader
 from ..utils.logger import setup_logger
 from ..utils.parser import WeiboParser
+from ..utils.proxy import ProxyPool, ProxyPoolConfig
 
 
 class WeiboClient:
@@ -28,6 +29,11 @@ class WeiboClient:
         log_level: str = "INFO",
         log_file: Optional[str] = None,
         user_agent: Optional[str] = None,
+        proxy_api_url: Optional[str] = None,
+        proxy_api_parser: Optional[Callable[[dict], str]] = None,
+        dynamic_proxy_ttl: int = 300,
+        proxy_pool_size: int = 10,
+        proxy_fetch_strategy: str = "random",
     ):
         """
         初始化微博客户端
@@ -37,6 +43,11 @@ class WeiboClient:
             log_level: 日志级别
             log_file: 日志文件路径
             user_agent: 可选的User-Agent字符串
+            proxy_api_url: 动态代理API地址，如 'http://api.proxy.com/get?format=json'
+            proxy_api_parser: 自定义代理API响应解析函数，接收响应JSON返回代理URL字符串
+            dynamic_proxy_ttl: 动态代理的过期时间（秒），默认300秒（5分钟）
+            proxy_pool_size: IP池容量，默认10个
+            proxy_fetch_strategy: 代理获取策略，'random'或'round_robin'，默认random
         """
         self.logger = setup_logger(
             level=getattr(__import__("logging"), log_level.upper()), log_file=log_file
@@ -69,6 +80,23 @@ class WeiboClient:
             download_dir="./weibo_images",
         )
 
+        # 初始化代理池配置和代理池
+        proxy_config = ProxyPoolConfig(
+            proxy_api_url=proxy_api_url,
+            proxy_api_parser=proxy_api_parser,
+            dynamic_proxy_ttl=dynamic_proxy_ttl,
+            pool_size=proxy_pool_size,
+            fetch_strategy=proxy_fetch_strategy,
+        )
+        self.proxy_pool = ProxyPool(config=proxy_config)
+
+        if proxy_api_url:
+            self.logger.info(
+                f"代理池已启用 (API: {proxy_api_url}, "
+                f"容量: {proxy_pool_size}, TTL: {dynamic_proxy_ttl}s, "
+                f"策略: {proxy_fetch_strategy})"
+            )
+
         self.logger.info("WeiboClient initialized successfully")
 
     def _set_cookies(self, cookies: Union[str, Dict[str, str]]):
@@ -91,11 +119,37 @@ class WeiboClient:
             self.logger.warning(f"Session初始化失败: {e}")
 
     def _request(
-        self, url: str, params: Dict[str, Any], max_retries: int = 3
+        self,
+        url: str,
+        params: Dict[str, Any],
+        max_retries: int = 3,
+        use_proxy: bool = True,
     ) -> Dict[str, Any]:
+        """
+        发送HTTP请求
+
+        Args:
+            url: 请求URL
+            params: 请求参数
+            max_retries: 最大重试次数
+            use_proxy: 是否使用代理，默认True。设为False可在单次请求中禁用代理
+
+        Returns:
+            响应的JSON数据
+        """
         for attempt in range(1, max_retries + 1):
+            proxies = None
+            if use_proxy and self.proxy_pool and self.proxy_pool.is_enabled():
+                proxies = self.proxy_pool.get_proxy()
+                if proxies:
+                    self.logger.debug(f"使用代理: {proxies.get('http', 'N/A')}")
+                else:
+                    self.logger.warning("代理池未能获取到可用代理，本次请求不使用代理")
+
             try:
-                response = self.session.get(url, params=params, timeout=5)
+                response = self.session.get(
+                    url, params=params, proxies=proxies, timeout=5
+                )
 
                 if response.status_code == 200:
                     return response.json()
@@ -125,11 +179,47 @@ class WeiboClient:
 
         raise CrawlError("达到最大重试次数")
 
-    def get_user_by_uid(self, uid: str) -> User:
+    def add_proxy(self, proxy_url: str, ttl: Optional[int] = None):
+        """
+        手动添加静态代理到IP池
+
+        Args:
+            proxy_url: 代理URL，格式如 'http://1.2.3.4:8080' 或 'http://user:pass@ip:port'
+            ttl: 过期时间（秒），None表示永不过期
+        """
+        self.proxy_pool.add_proxy(proxy_url, ttl)
+        ttl_str = "永不过期" if ttl is None else f"{ttl}s"
+        self.logger.info(f"添加代理到IP池: {proxy_url}, TTL: {ttl_str}")
+
+    def get_proxy_pool_size(self) -> int:
+        """
+        获取当前IP池大小
+
+        Returns:
+            可用代理数量
+        """
+        return self.proxy_pool.get_pool_size()
+
+    def clear_proxy_pool(self):
+        """清空IP池"""
+        self.proxy_pool.clear_pool()
+        self.logger.info("IP池已清空")
+
+    def get_user_by_uid(self, uid: str, use_proxy: bool = True) -> User:
+        """
+        获取用户信息
+
+        Args:
+            uid: 用户ID
+            use_proxy: 是否使用代理，默认True
+
+        Returns:
+            User对象
+        """
         url = "https://m.weibo.cn/api/container/getIndex"
         params = {"containerid": f"100505{uid}"}
 
-        data = self._request(url, params)
+        data = self._request(url, params, use_proxy=use_proxy)
 
         if not data.get("data") or not data["data"].get("userInfo"):
             raise UserNotFoundError(f"用户 {uid} 不存在")
@@ -141,14 +231,26 @@ class WeiboClient:
         return user
 
     def get_user_posts(
-        self, uid: str, page: int = 1, expand: bool = False
+        self, uid: str, page: int = 1, expand: bool = False, use_proxy: bool = True
     ) -> List[Post]:
+        """
+        获取用户微博列表
+
+        Args:
+            uid: 用户ID
+            page: 页码
+            expand: 是否展开长文
+            use_proxy: 是否使用代理，默认True
+
+        Returns:
+            Post对象列表
+        """
         time.sleep(random.uniform(1, 3))
 
         url = "https://m.weibo.cn/api/container/getIndex"
         params = {"containerid": f"107603{uid}", "page": page}
 
-        data = self._request(url, params)
+        data = self._request(url, params, use_proxy=use_proxy)
 
         if not data.get("data"):
             return []
@@ -168,11 +270,21 @@ class WeiboClient:
         self.logger.info(f"获取到 {len(posts)} 条微博")
         return posts
 
-    def get_post_by_bid(self, bid: str) -> Post:
+    def get_post_by_bid(self, bid: str, use_proxy: bool = True) -> Post:
+        """
+        根据bid获取微博详情
+
+        Args:
+            bid: 微博bid
+            use_proxy: 是否使用代理，默认True
+
+        Returns:
+            Post对象
+        """
         url = "https://m.weibo.cn/statuses/show"
         params = {"id": bid}
 
-        data = self._request(url, params)
+        data = self._request(url, params, use_proxy=use_proxy)
 
         if not data.get("data"):
             raise ParseError(f"未找到微博 {bid}")
@@ -183,7 +295,21 @@ class WeiboClient:
 
         return Post.from_dict(post_data)
 
-    def search_users(self, query: str, page: int = 1, count: int = 10) -> List[User]:
+    def search_users(
+        self, query: str, page: int = 1, count: int = 10, use_proxy: bool = True
+    ) -> List[User]:
+        """
+        搜索用户
+
+        Args:
+            query: 搜索关键词
+            page: 页码
+            count: 每页数量
+            use_proxy: 是否使用代理，默认True
+
+        Returns:
+            User对象列表
+        """
         time.sleep(random.uniform(1, 3))
 
         url = "https://m.weibo.cn/api/container/getIndex"
@@ -193,7 +319,7 @@ class WeiboClient:
             "count": count,
         }
 
-        data = self._request(url, params)
+        data = self._request(url, params, use_proxy=use_proxy)
         users = []
         cards = data.get("data", {}).get("cards", [])
 
@@ -209,13 +335,26 @@ class WeiboClient:
         self.logger.info(f"搜索到 {len(users)} 个用户")
         return users
 
-    def search_posts(self, query: str, page: int = 1) -> List[Post]:
+    def search_posts(
+        self, query: str, page: int = 1, use_proxy: bool = True
+    ) -> List[Post]:
+        """
+        搜索微博
+
+        Args:
+            query: 搜索关键词
+            page: 页码
+            use_proxy: 是否使用代理，默认True
+
+        Returns:
+            Post对象列表
+        """
         time.sleep(random.uniform(1, 3))
 
         url = "https://m.weibo.cn/api/container/getIndex"
         params = {"containerid": f"100103type=1&q={query}", "page": page}
 
-        data = self._request(url, params)
+        data = self._request(url, params, use_proxy=use_proxy)
         posts_data = self.parser.parse_posts(data)
         posts = [Post.from_dict(post_data) for post_data in posts_data]
 

@@ -16,8 +16,7 @@ def main():
     print("🚀 Crawl4Weibo 微博爬虫")
     print("=" * 30)
 
-    client = WeiboClient()
-
+    client = WeiboClient(log_level="debug")
     test_uid = "2656274875"
 
     try:
