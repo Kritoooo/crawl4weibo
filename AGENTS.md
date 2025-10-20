@@ -5,10 +5,10 @@ The library code lives in `crawl4weibo/`, with `core/` managing request orchestr
 
 ## Build, Test, and Development Commands
 - `uv sync --dev` Install project and development extras into the local uv-managed virtualenv.
-- `uv run python examples/simple_example.py` run the basic crawling demo against live data.
-- `uv run pytest` execute the full suite (markers: `unit`, `integration`, `slow`).
-- `uv run pytest -m "unit and not slow"` run a fast gate before opening a PR.
-- `uv run ruff check crawl4weibo --fix && uv run ruff format crawl4weibo` enforce linting, import order, and formatting defaults.
+- `uv run python examples/simple_example.py` Run the basic crawling demo against live data.
+- `uv run pytest` Execute the full suite (markers: `unit`, `integration`, `slow`).
+- `uv run pytest -m "unit and not slow"` Run a fast gate before opening a PR.
+- `uv run ruff check crawl4weibo --fix && uv run ruff format crawl4weibo` Enforce linting, import order, and formatting defaults.
 
 ## Coding Style & Naming Conventions
 Follow PEP 8 with four-space indentation, 88-character lines, and double-quoted strings (ruff enforces these). Prefer descriptive `snake_case` for functions and attributes, keep constants uppercase, and leave response keys unchanged to reflect upstream payloads. Add type hints on new public APIs and keep IO-heavy logic inside `core/` helpers so models remain lightweight.
