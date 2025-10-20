@@ -56,11 +56,17 @@ class ProxyPool:
         - {"ip": "1.2.3.4", "port": "8080"}
         - {"proxy": "http://1.2.3.4:8080"}
         - {"data": {"ip": "1.2.3.4", "port": 8080}}
+        - {"data": [{"ip": "1.2.3.4", "port": 8080}]}
         """
         if "proxy" in response_data:
             return response_data["proxy"]
 
         data = response_data.get("data", response_data)
+
+        if isinstance(data, list):
+            if not data:
+                raise ValueError(f"代理API返回的data数组为空: {response_data}")
+            data = data[0]
 
         if "ip" in data and "port" in data:
             ip = data["ip"]
