@@ -4,7 +4,7 @@
 The library code lives in `crawl4weibo/`, with `core/` managing request orchestration and retry logic, `models/` exposing typed results, `utils/` housing shared helpers, and `exceptions/` defining recoverable error types. Tests mirror runtime modules inside `tests/`, living assets and walkthroughs are under `docs/` and `examples/` (start with `examples/simple_example.py` for a smoke run).
 
 ## Build, Test, and Development Commands
-- `uv sync --dev` install project and development extras into the local uv-managed virtualenv.
+- `uv sync --dev` Install project and development extras into the local uv-managed virtualenv.
 - `uv run python examples/simple_example.py` run the basic crawling demo against live data.
 - `uv run pytest` execute the full suite (markers: `unit`, `integration`, `slow`).
 - `uv run pytest -m "unit and not slow"` run a fast gate before opening a PR.
