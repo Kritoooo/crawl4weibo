@@ -42,7 +42,8 @@ class ImageDownloader:
         self.max_retries = max_retries
         self.delay_range = delay_range
 
-        self.download_dir.mkdir(parents=True, exist_ok=True)
+        # The creation of self.download_dir (e.g., './images') is now deferred
+        # to the download_image method to prevent premature folder creation.
 
         if (
             not hasattr(self.session, "headers")
@@ -80,11 +81,15 @@ class ImageDownloader:
             return None
 
         try:
+            # Determine the target directory for saving the image
             if subdir:
                 save_dir = self.download_dir / subdir
-                save_dir.mkdir(parents=True, exist_ok=True)
             else:
                 save_dir = self.download_dir
+
+            # Ensure the directory exists. This is now lazy, meaning it will
+            # only be created when the first image is actually about to be saved.
+            save_dir.mkdir(parents=True, exist_ok=True)
 
             if not filename:
                 filename = self._generate_filename(url)
@@ -236,40 +241,4 @@ class ImageDownloader:
         """Generate filename from URL"""
         parsed_url = urllib.parse.urlparse(url)
         filename = os.path.basename(parsed_url.path)
-
-        if not filename or "." not in filename:
-            filename = f"image_{hash(url) % 1000000}.jpg"
-
-        return filename
-
-    def get_download_stats(self, download_results: Dict[str, Any]) -> Dict[str, int]:
-        """
-        Get statistics from download results
-
-        Args:
-            download_results: Results from download operations
-
-        Returns:
-            Dictionary with download statistics
-        """
-        stats = {
-            "total_urls": 0,
-            "successful_downloads": 0,
-            "failed_downloads": 0,
-            "already_existed": 0,
-        }
-
-        def count_results(results):
-            if isinstance(results, dict):
-                for value in results.values():
-                    if isinstance(value, dict):
-                        count_results(value)
-                    elif isinstance(value, str):
-                        stats["successful_downloads"] += 1
-                        stats["total_urls"] += 1
-                    elif value is None:
-                        stats["failed_downloads"] += 1
-                        stats["total_urls"] += 1
-
-        count_results(download_results)
-        return stats
+        return filename if filename else "unknown_image.jpg"
