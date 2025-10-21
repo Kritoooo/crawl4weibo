@@ -1,68 +1,72 @@
 # Crawl4Weibo
 
-Crawl4Weibo 是一个开箱即用的微博爬虫 Python 库，模拟移动端请求、处理常见反爬策略，并返回结构化数据模型，适合数据采集、分析与监控场景。
+**[中文文档](README_zh.md)** | **English**
 
-## ✨ 特性
-- 无需 Cookie 即可运行，自动初始化 session 和移动端 UA。
-- 内置 432 防护处理与指数退避重试，减少请求失败。
-- 支持动态和静态IP代理池统一管理，可配置过期时间，支持轮询和自动清理。
-- 标准化的 `User` 与 `Post` 数据模型，可递归访问转发内容。
-- 支持微博长文展开、关键词搜索、用户列表抓取与批量分页。
-- 提供图像下载工具，支持单条、批量和整页下载，并带重复文件检查。
-- 统一日志与错误类型，便于快速定位网络、解析或鉴权问题。
+---
 
-## 安装
+Crawl4Weibo is a ready-to-use Weibo (微博) web scraper Python library that simulates mobile requests, handles common anti-scraping strategies, and returns structured data models—ideal for data collection, analysis, and monitoring scenarios.
+
+## ✨ Features
+- **No Cookie Required**: Runs without cookies, automatically initializes session with mobile User-Agent
+- **Built-in 432 Protection**: Handles anti-scraping protection with exponential backoff retry mechanism
+- **Unified Proxy Pool Management**: Supports both dynamic and static IP proxy pools with configurable TTL, polling strategies, and automatic cleanup
+- **Standardized Data Models**: Clean `User` and `Post` data models with recursive access to reposted content
+- **Long Text Expansion**: Supports expanding truncated long posts, keyword search, user list fetching, and batch pagination
+- **Image Download Utilities**: Download images from single posts, batches, or entire pages with duplicate file detection
+- **Unified Logging & Error Types**: Quickly locate network, parsing, or authentication issues
+
+## Installation
 ```bash
 pip install crawl4weibo
 ```
-或使用更快的 `uv`：
+Or use the faster `uv`:
 ```bash
 uv pip install crawl4weibo
 ```
 
-## 快速开始
+## Quick Start
 ```python
 from crawl4weibo import WeiboClient
 
 client = WeiboClient()
 uid = "2656274875"
 
-# 获取用户信息
+# Get user information
 user = client.get_user_by_uid(uid)
-print(f"{user.screen_name} - 粉丝: {user.followers_count}")
+print(f"{user.screen_name} - Followers: {user.followers_count}")
 
-# 获取用户微博（支持展开长文）
+# Get user posts (with long text expansion)
 posts = client.get_user_posts(uid, page=1, expand=True)
 for post in posts[:3]:
-    print(f"{post.text[:50]}... - 点赞: {post.attitudes_count}")
+    print(f"{post.text[:50]}... - Likes: {post.attitudes_count}")
 
-# 搜索用户
+# Search users
 users = client.search_users("新浪")
 for user in users[:3]:
-    print(f"{user.screen_name} - 粉丝: {user.followers_count}")
+    print(f"{user.screen_name} - Followers: {user.followers_count}")
 
-# 搜索微博
+# Search posts
 results = client.search_posts("人工智能", page=1)
-print(f"找到 {len(results)} 条搜索结果")
+print(f"Found {len(results)} results")
 ```
-更多示例请参考 [`examples/simple_example.py`](examples/simple_example.py)。
+For more examples, see [`examples/simple_example.py`](examples/simple_example.py).
 
-**运行示例：**
+**Run the example:**
 ```bash
-# 克隆仓库后运行
+# Clone the repository first
 python examples/simple_example.py
 
-# 或使用 uv
+# Or using uv
 uv run python examples/simple_example.py
 ```
 
-## 图片下载示例
+## Image Download Example
 ```python
 from crawl4weibo import WeiboClient
 
 client = WeiboClient()
 
-# 方式1: 下载单个帖子的图片
+# Method 1: Download images from a single post
 post = client.get_post_by_bid("Q6FyDtbQc")
 if post.pic_urls:
     results = client.download_post_images(
@@ -70,54 +74,54 @@ if post.pic_urls:
         download_dir="./downloads",
         subdir="single_post"
     )
-    print(f"成功下载 {sum(1 for p in results.values() if p)} 张图片")
+    print(f"Successfully downloaded {sum(1 for p in results.values() if p)} images")
 
-# 方式2: 批量下载用户帖子的图片
+# Method 2: Batch download images from user posts
 posts = client.get_user_posts("2656274875", page=1)
 results = client.download_posts_images(
-    posts[:3],  # 下载前3个帖子的图片
+    posts[:3],  # Download images from first 3 posts
     download_dir="./downloads"
 )
 
-# 方式3: 下载用户多页帖子的图片
+# Method 3: Download images from multiple pages of user posts
 results = client.download_user_posts_images(
     uid="2656274875",
-    pages=2,  # 下载前2页
+    pages=2,  # Download from first 2 pages
     download_dir="./downloads"
 )
 ```
-更多用法请参考 [`examples/download_images_example.py`](examples/download_images_example.py)。
+For more usage details, see [`examples/download_images_example.py`](examples/download_images_example.py).
 
-**运行示例：**
+**Run the example:**
 ```bash
 python examples/download_images_example.py
 ```
 
-## 代理池配置示例
+## Proxy Pool Configuration Example
 ```python
 from crawl4weibo import WeiboClient
 
-# 方式1: 使用动态代理API
+# Method 1: Use dynamic proxy API
 client = WeiboClient(
     proxy_api_url="http://api.proxy.com/get?format=json",
-    dynamic_proxy_ttl=300,      # 动态代理过期时间（秒）
-    proxy_pool_size=10,         # IP池容量
-    proxy_fetch_strategy="random"  # random(随机) 或 round_robin(轮询)
+    dynamic_proxy_ttl=300,      # Dynamic proxy TTL in seconds
+    proxy_pool_size=10,         # Proxy pool capacity
+    proxy_fetch_strategy="random"  # random or round_robin
 )
 
-# 方式2: 手动添加静态代理
+# Method 2: Manually add static proxies
 client = WeiboClient()
-client.add_proxy("http://1.2.3.4:8080", ttl=600)  # 指定过期时间
-client.add_proxy("http://5.6.7.8:8080")  # 永不过期
+client.add_proxy("http://1.2.3.4:8080", ttl=600)  # With TTL
+client.add_proxy("http://5.6.7.8:8080")  # Never expires
 
-# 方式3: 混合使用动态和静态代理
+# Method 3: Mix dynamic and static proxies
 client = WeiboClient(
     proxy_api_url="http://api.proxy.com/get",
     proxy_pool_size=20
 )
 client.add_proxy("http://1.2.3.4:8080", ttl=None)
 
-# 方式4: 自定义解析器（适配不同代理服务商）
+# Method 4: Custom parser (adapt to different proxy providers)
 def custom_parser(data):
     return f"http://{data['result']['ip']}:{data['result']['port']}"
 
@@ -126,28 +130,28 @@ client = WeiboClient(
     proxy_api_parser=custom_parser
 )
 
-# 灵活控制单次请求是否使用代理
+# Flexible control of proxy usage per request
 user = client.get_user_by_uid("2656274875", use_proxy=False)
-posts = client.get_user_posts("2656274875", page=1)  # 使用代理
+posts = client.get_user_posts("2656274875", page=1)  # Uses proxy
 ```
 
-## API 能力速览
-- `get_user_by_uid(uid)`：获取用户资料。
-- `get_user_posts(uid, page=1, expand=False)`：抓取特定用户微博，支持展开长文。
-- `get_post_by_bid(bid)`：获取单条微博的完整正文与多媒体信息。
-- `search_users(query, page=1, count=10)` / `search_posts(query, page=1)`：关键词搜索用户/博文。
-- `download_post_images(post, ...)`、`download_user_posts_images(uid, pages=2, ...)`：下载图像素材。
-- 统一异常：`NetworkError`、`RateLimitError`、`UserNotFoundError` 等，便于业务兜底。
+## API Overview
+- `get_user_by_uid(uid)`: Get user profile and statistics
+- `get_user_posts(uid, page=1, expand=False)`: Fetch user timeline posts with optional long text expansion
+- `get_post_by_bid(bid)`: Get full content and media info for a single post
+- `search_users(query, page=1, count=10)` / `search_posts(query, page=1)`: Keyword search
+- `download_post_images(post, ...)`, `download_user_posts_images(uid, pages=2, ...)`: Download image assets
+- **Unified Exceptions**: `NetworkError`, `RateLimitError`, `UserNotFoundError`, etc., for business-level error handling
 
-## 开发与测试
+## Development & Testing
 ```bash
-uv sync --dev                # 安装开发依赖
-uv run pytest                # 运行全部测试 (内置 unit/integration/slow 标记)
+uv sync --dev                # Install dev dependencies
+uv run pytest                # Run all tests (includes unit/integration/slow markers)
 uv run ruff check crawl4weibo --fix
 uv run ruff format crawl4weibo
 uv run python examples/simple_example.py
 ```
-项目结构、贡献指南与更多流程请参见 `docs/DEVELOPMENT.md` 与 `AGENTS.md`。
+For project structure, contribution guidelines, and more workflows, see `docs/DEVELOPMENT.md` and `AGENTS.md`.
 
-## 许可证
+## License
 MIT License
