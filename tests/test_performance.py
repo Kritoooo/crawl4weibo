@@ -118,7 +118,13 @@ class CrawlMetrics:
         print(f"\n🎯 PRIMARY METRIC")
         print(f"Posts Crawled/Second:     {self.posts_per_second:.3f} posts/s")
         print(f"Total Posts Crawled:      {self.posts_crawled}")
-        print(f"Total Time:               {self.total_time:.2f}s")
+        print(f"Actual Elapsed Time:      {self.total_time:.2f}s")
+
+        # Calculate concurrency speedup if applicable
+        if self.detail_time > 0 and self.total_time > 0:
+            speedup = self.detail_time / self.total_time
+            if speedup > 1.5:  # Only show if there's meaningful speedup
+                print(f"Concurrency Speedup:      {speedup:.2f}x")
 
         # Search phase
         print(f"\n📊 SEARCH PHASE")
@@ -128,7 +134,7 @@ class CrawlMetrics:
         print(f"  Success Rate:           {self.search_success_rate:.2f}%")
         print(f"Posts Found (BIDs):       {self.posts_found}")
         print(f"Avg Search Time:          {self.avg_search_time:.2f}s")
-        print(f"Total Search Time:        {self.search_time:.2f}s")
+        print(f"Sum of Search Times:      {self.search_time:.2f}s (all requests added)")
 
         # Detail crawling phase
         print(f"\n📝 DETAIL CRAWLING PHASE")
@@ -137,7 +143,7 @@ class CrawlMetrics:
         print(f"  Failed:                 {self.detail_failed}")
         print(f"  Success Rate:           {self.detail_success_rate:.2f}%")
         print(f"Avg Detail Time:          {self.avg_detail_time:.2f}s")
-        print(f"Total Detail Time:        {self.detail_time:.2f}s")
+        print(f"Sum of Detail Times:      {self.detail_time:.2f}s (all requests added)")
 
         # Overall statistics
         print(f"\n📈 OVERALL STATISTICS")
