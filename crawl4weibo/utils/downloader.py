@@ -15,6 +15,7 @@ import requests
 
 from ..exceptions.base import NetworkError
 from .logger import get_logger
+from .proxy import ProxyPool
 
 
 class ImageDownloader:
@@ -26,6 +27,7 @@ class ImageDownloader:
         download_dir: str = "./images",
         max_retries: int = 3,
         delay_range: Tuple[float, float] = (1.0, 3.0),
+        proxy_pool: Optional[ProxyPool] = None,
     ):
         """
         Initialize image downloader
@@ -35,12 +37,14 @@ class ImageDownloader:
             download_dir: Directory to save downloaded images
             max_retries: Maximum number of retry attempts
             delay_range: Random delay range between downloads (min, max) in seconds
+            proxy_pool: Optional proxy pool for downloading images
         """
         self.logger = get_logger()
         self.session = session or requests.Session()
         self.download_dir = Path(download_dir)
         self.max_retries = max_retries
         self.delay_range = delay_range
+        self.proxy_pool = proxy_pool
 
         self.download_dir.mkdir(parents=True, exist_ok=True)
 
@@ -97,7 +101,20 @@ class ImageDownloader:
 
             for attempt in range(1, self.max_retries + 1):
                 try:
-                    response = self.session.get(url, timeout=30, stream=True)
+                    # Get proxy if available
+                    proxies = None
+                    using_proxy = False
+                    if self.proxy_pool and self.proxy_pool.is_enabled():
+                        proxies = self.proxy_pool.get_proxy()
+                        if proxies:
+                            using_proxy = True
+                            self.logger.debug(
+                                f"Downloading with proxy: {proxies.get('http', 'N/A')}"
+                            )
+
+                    response = self.session.get(
+                        url, timeout=30, stream=True, proxies=proxies
+                    )
                     response.raise_for_status()
 
                     content_type = response.headers.get("content-type", "")
@@ -115,7 +132,12 @@ class ImageDownloader:
 
                 except requests.exceptions.RequestException as e:
                     if attempt < self.max_retries:
-                        delay = random.uniform(2, 5)
+                        # When using proxy, wait shorter time for faster retry on
+                        # network instability
+                        if using_proxy:
+                            delay = random.uniform(0.5, 1.5)
+                        else:
+                            delay = random.uniform(2, 5)
                         self.logger.warning(
                             f"Download failed (attempt {attempt}), "
                             f"retrying in {delay:.1f}s: {e}"
