@@ -79,10 +79,6 @@ class WeiboClient:
         self._init_session()
 
         self.parser = WeiboParser()
-        self.downloader = ImageDownloader(
-            session=self.session,
-            download_dir="./weibo_images",
-        )
 
         # Initialize proxy pool configuration and proxy pool
         proxy_config = ProxyPoolConfig(
@@ -93,6 +89,13 @@ class WeiboClient:
             fetch_strategy=proxy_fetch_strategy,
         )
         self.proxy_pool = ProxyPool(config=proxy_config)
+
+        # Initialize image downloader with proxy pool support
+        self.downloader = ImageDownloader(
+            session=self.session,
+            download_dir="./weibo_images",
+            proxy_pool=self.proxy_pool,
+        )
 
         if proxy_api_url:
             self.logger.info(
@@ -144,9 +147,11 @@ class WeiboClient:
         """
         for attempt in range(1, max_retries + 1):
             proxies = None
+            using_proxy = False
             if use_proxy and self.proxy_pool and self.proxy_pool.is_enabled():
                 proxies = self.proxy_pool.get_proxy()
                 if proxies:
+                    using_proxy = True
                     self.logger.debug(f"Using proxy: {proxies.get('http', 'N/A')}")
                 else:
                     self.logger.warning(
@@ -163,7 +168,12 @@ class WeiboClient:
                     return response.json()
                 elif response.status_code == 432:
                     if attempt < max_retries:
-                        sleep_time = random.uniform(4, 7)
+                        # When using proxy, wait shorter time as dynamic proxy
+                        # rarely gets IP banned, usually just network instability
+                        if using_proxy:
+                            sleep_time = random.uniform(0.5, 1.5)
+                        else:
+                            sleep_time = random.uniform(4, 7)
                         self.logger.warning(
                             f"Encountered 432 error, waiting {sleep_time:.1f} "
                             "seconds before retry..."
@@ -177,7 +187,12 @@ class WeiboClient:
 
             except requests.exceptions.RequestException as e:
                 if attempt < max_retries:
-                    sleep_time = random.uniform(2, 5)
+                    # When using proxy, wait shorter time for faster retry on
+                    # network instability
+                    if using_proxy:
+                        sleep_time = random.uniform(0.5, 1.5)
+                    else:
+                        sleep_time = random.uniform(2, 5)
                     self.logger.warning(
                         f"Request failed, waiting {sleep_time:.1f} seconds "
                         f"before retry: {e}"
