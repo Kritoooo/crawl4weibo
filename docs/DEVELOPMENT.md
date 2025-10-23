@@ -1,161 +1,163 @@
-# Crawl4Weibo 开发文档
+# Crawl4Weibo Development Documentation
 
-## 目录
-- [开发环境设置](#开发环境设置)
-- [项目结构](#项目结构)
-- [开发工作流](#开发工作流)
-- [测试指南](#测试指南)
-- [代码质量](#代码质量)
+[English](DEVELOPMENT.md) | [中文](DEVELOPMENT_zh.md)
 
-## 开发环境设置
+## Table of Contents
+- [Development Environment Setup](#development-environment-setup)
+- [Project Structure](#project-structure)
+- [Development Workflow](#development-workflow)
+- [Testing Guide](#testing-guide)
+- [Code Quality](#code-quality)
 
-### 环境要求
+## Development Environment Setup
+
+### Requirements
 - Python 3.8+
-- uv (推荐的包管理工具)
+- uv (recommended package manager)
 
-### 快速开始
+### Quick Start
 ```bash
-# 克隆项目
+# Clone the project
 git clone https://github.com/Kritoooo/crawl4weibo.git
 cd crawl4weibo
 
-# 安装开发依赖
+# Install development dependencies
 uv sync --dev
 
-# 运行测试确保环境正常
+# Run tests to ensure the environment is set up correctly
 uv run pytest tests/ -v
 ```
 
-### 开发依赖说明
+### Development Dependencies
 ```toml
 [dependency-groups]
 dev = [
-    "pytest>=7.4.4",    # 测试框架
-    "pytest-cov>=4.1.0", # 测试覆盖率
-    "ruff>=0.14.0",      # 现代化的快速linter和formatter
+    "pytest>=7.4.4",    # Testing framework
+    "pytest-cov>=4.1.0", # Test coverage
+    "ruff>=0.14.0",      # Modern fast linter and formatter
 ]
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 crawl4weibo/
-├── crawl4weibo/           # 主包
+├── crawl4weibo/           # Main package
 │   ├── __init__.py
-│   ├── core/              # 核心功能
+│   ├── core/              # Core functionality
 │   │   ├── __init__.py
-│   │   └── client.py      # WeiboClient主要实现
-│   ├── models/            # 数据模型
+│   │   └── client.py      # WeiboClient main implementation
+│   ├── models/            # Data models
 │   │   ├── __init__.py
-│   │   ├── user.py        # User模型
-│   │   └── post.py        # Post模型
-│   ├── utils/             # 工具模块
+│   │   ├── user.py        # User model
+│   │   └── post.py        # Post model
+│   ├── utils/             # Utility modules
 │   │   ├── __init__.py
-│   │   ├── logger.py      # 日志工具
-│   │   └── parser.py      # 解析工具
-│   └── exceptions/        # 自定义异常
+│   │   ├── logger.py      # Logging utilities
+│   │   └── parser.py      # Parsing utilities
+│   └── exceptions/        # Custom exceptions
 │       ├── __init__.py
-│       └── base.py        # 基础异常类
-├── tests/                 # 测试文件
+│       └── base.py        # Base exception classes
+├── tests/                 # Test files
 │   ├── __init__.py
-│   ├── test_models.py     # 模型单元测试
-│   ├── test_client.py     # 客户端单元测试
-│   └── test_integration.py # 集成测试
-├── docs/                  # 文档
-├── examples/              # 示例代码
-├── .github/workflows/     # GitHub Actions配置
-├── pyproject.toml         # 项目配置
-├── pytest.ini            # 测试配置
+│   ├── test_models.py     # Model unit tests
+│   ├── test_client.py     # Client unit tests
+│   └── test_integration.py # Integration tests
+├── docs/                  # Documentation
+├── examples/              # Example code
+├── .github/workflows/     # GitHub Actions configuration
+├── pyproject.toml         # Project configuration
+├── pytest.ini            # Test configuration
 └── README.md
 ```
 
-## 开发工作流
+## Development Workflow
 
-### 分支策略
-- `main` - 主分支，稳定版本
-- `develop` - 开发分支
-- `feature/*` - 功能分支
-- `hotfix/*` - 热修复分支
+### Branching Strategy
+- `main` - Main branch, stable releases
+- `develop` - Development branch
+- `feature/*` - Feature branches
+- `hotfix/*` - Hotfix branches
 
-### 功能开发流程
+### Feature Development Process
 ```bash
-# 1. 从main创建功能分支
+# 1. Create a feature branch from main
 git checkout main
 git pull origin main
 git checkout -b feature/your-feature-name
 
-# 2. 开发过程中持续测试
-uv run pytest tests/ -m unit  # 快速单元测试
+# 2. Run tests continuously during development
+uv run pytest tests/ -m unit  # Quick unit tests
 
-# 3. 提交前完整检查
-uv run ruff check crawl4weibo --fix  # 检查并自动修复问题
-uv run ruff format crawl4weibo       # 格式化代码
-uv run pytest tests/                 # 运行所有测试
+# 3. Complete checks before committing
+uv run ruff check crawl4weibo --fix  # Check and auto-fix issues
+uv run ruff format crawl4weibo       # Format code
+uv run pytest tests/                 # Run all tests
 
-# 4. 提交代码
+# 4. Commit code
 git add .
 git commit -m "feat: add your feature description"
 
-# 5. 推送并创建PR
+# 5. Push and create PR
 git push origin feature/your-feature-name
-# 然后在GitHub创建Pull Request
+# Then create a Pull Request on GitHub
 ```
 
-### 提交信息规范
-使用约定式提交格式：
+### Commit Message Convention
+Use conventional commit format:
 ```
-feat: 新功能
-fix: 修复bug
-docs: 文档更新
-style: 代码格式调整（不影响功能）
-refactor: 重构代码
-test: 添加测试
-chore: 构建或工具相关
+feat: new feature
+fix: bug fix
+docs: documentation update
+style: code style adjustment (no functional changes)
+refactor: code refactoring
+test: add tests
+chore: build or tool-related changes
 ```
 
-## 测试指南
+## Testing Guide
 
-### 测试类型
-项目包含两种类型的测试：
+### Test Types
+The project includes two types of tests:
 
-#### 单元测试 (`@pytest.mark.unit`)
-- 测试单个函数或类的功能
-- 不依赖外部API或服务
-- 运行快速，适合开发过程中频繁运行
+#### Unit Tests (`@pytest.mark.unit`)
+- Test individual functions or classes
+- No external API or service dependencies
+- Fast execution, suitable for frequent runs during development
 
 ```bash
-# 只运行单元测试
+# Run only unit tests
 uv run pytest tests/ -m unit -v
 ```
 
-#### 集成测试 (`@pytest.mark.integration`)
-- 测试与真实微博API的交互
-- 验证API返回数据结构的正确性
-- 运行较慢，适合完整验证
+#### Integration Tests (`@pytest.mark.integration`)
+- Test interactions with real Weibo API
+- Verify correctness of API response data structures
+- Slower execution, suitable for complete validation
 
 ```bash
-# 只运行集成测试
+# Run only integration tests
 uv run pytest tests/ -m integration -v
 ```
 
-### 运行测试
+### Running Tests
 ```bash
-# 运行所有测试
+# Run all tests
 uv run pytest tests/ -v
 
-# 带覆盖率报告
+# With coverage report
 uv run pytest tests/ --cov=crawl4weibo --cov-report=html
 
-# 运行特定测试文件
+# Run specific test file
 uv run pytest tests/test_models.py -v
 
-# 运行特定测试方法
+# Run specific test method
 uv run pytest tests/test_models.py::TestUser::test_user_creation -v
 ```
 
-### 编写测试
+### Writing Tests
 
-#### 单元测试示例
+#### Unit Test Example
 ```python
 import pytest
 from crawl4weibo.models.user import User
@@ -168,7 +170,7 @@ class TestUser:
         assert user.screen_name == "TestUser"
 ```
 
-#### 集成测试示例
+#### Integration Test Example
 ```python
 import pytest
 from crawl4weibo import WeiboClient
@@ -185,28 +187,28 @@ class TestWeiboClientIntegration:
             pytest.skip(f"API call failed: {e}")
 ```
 
-## 代码质量
+## Code Quality
 
-### 代码风格
-项目使用 **Ruff** 作为统一的代码质量工具，提供极快的linting和formatting：
+### Code Style
+The project uses **Ruff** as a unified code quality tool, providing extremely fast linting and formatting:
 
-#### Ruff - 统一的代码质量工具
+#### Ruff - Unified Code Quality Tool
 ```bash
-# 代码检查
+# Code checking
 uv run ruff check crawl4weibo
 
-# 自动修复问题
+# Auto-fix issues
 uv run ruff check crawl4weibo --fix
 
-# 代码格式化
+# Code formatting
 uv run ruff format crawl4weibo
 
-# 检查格式（不修改）
+# Check format (without modifying)
 uv run ruff format crawl4weibo --check
 ```
 
-### 配置文件
-Ruff配置在 `pyproject.toml` 中：
+### Configuration
+Ruff configuration in `pyproject.toml`:
 ```toml
 [tool.ruff]
 line-length = 88
@@ -227,65 +229,65 @@ select = [
 quote-style = "double"
 ```
 
-## 开发最佳实践
+## Development Best Practices
 
-### 提交前检查
-推送代码前的完整检查流程：
+### Pre-commit Checklist
+Complete checklist before pushing code:
 ```bash
-# 1. 安装依赖
+# 1. Install dependencies
 uv sync --dev
 
-# 2. 代码质量检查和修复
+# 2. Code quality check and fix
 uv run ruff check crawl4weibo --fix
 uv run ruff format crawl4weibo
 
-# 3. 运行测试
+# 3. Run tests
 uv run pytest tests/ -v
 
-# 4. 构建包验证（可选）
+# 4. Build package verification (optional)
 uv build
 ```
 
-## 常见问题
+## Troubleshooting
 
-### 测试失败
+### Test Failures
 ```bash
-# 查看详细错误信息
+# View detailed error messages
 uv run pytest tests/ -v --tb=long
 
-# 运行单个失败测试
+# Run a single failing test
 uv run pytest tests/test_file.py::test_function -v
 ```
 
-### 代码格式问题
+### Code Format Issues
 ```bash
-# 使用ruff自动修复
+# Auto-fix with ruff
 uv run ruff check crawl4weibo --fix
 uv run ruff format crawl4weibo
 ```
 
-### 依赖问题
+### Dependency Issues
 ```bash
-# 重新安装依赖
+# Reinstall dependencies
 rm -rf .venv
 uv venv
 uv sync --dev
 ```
 
-## 贡献指南
+## Contributing Guide
 
-1. Fork项目
-2. 创建功能分支
-3. 编写代码和测试
-4. 确保所有检查通过
-5. 创建Pull Request
-6. 响应Code Review反馈
+1. Fork the project
+2. Create a feature branch
+3. Write code and tests
+4. Ensure all checks pass
+5. Create a Pull Request
+6. Respond to Code Review feedback
 
-### Code Review检查点
-- 代码功能正确性
-- 测试覆盖率
-- 代码风格一致性（通过ruff检查）
-- 性能影响
-- 向后兼容性
+### Code Review Checklist
+- Code functionality correctness
+- Test coverage
+- Code style consistency (verified by ruff)
+- Performance impact
+- Backward compatibility
 
-欢迎贡献代码！如有问题请创建Issue讨论。
+Contributions are welcome! Please create an Issue for discussion if you have any questions.
