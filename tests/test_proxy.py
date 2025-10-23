@@ -372,3 +372,38 @@ class TestProxyPool:
 
         assert proxy is not None
         assert proxy["http"] == "http://1.2.3.4:8080"
+
+    @responses.activate
+    def test_get_proxy_plain_text_format(self):
+        """Test parsing plain text proxy format (ip:port)"""
+        proxy_api_url = "http://api.proxy.com/get"
+        responses.add(
+            responses.GET,
+            proxy_api_url,
+            body="218.95.37.11:25152\n219.150.218.21:25089\n218.95.37.161:25015",
+            status=200,
+        )
+
+        config = ProxyPoolConfig(proxy_api_url=proxy_api_url)
+        pool = ProxyPool(config=config)
+        proxy = pool.get_proxy()
+
+        assert proxy is not None
+        assert proxy["http"] == "http://218.95.37.11:25152"
+        assert proxy["https"] == "http://218.95.37.11:25152"
+
+    @responses.activate
+    def test_get_proxy_plain_text_single_line(self):
+        """Test parsing single line plain text proxy"""
+        proxy_api_url = "http://api.proxy.com/get"
+        responses.add(
+            responses.GET, proxy_api_url, body="10.20.30.40:8080", status=200
+        )
+
+        config = ProxyPoolConfig(proxy_api_url=proxy_api_url)
+        pool = ProxyPool(config=config)
+        proxy = pool.get_proxy()
+
+        assert proxy is not None
+        assert proxy["http"] == "http://10.20.30.40:8080"
+        assert proxy["https"] == "http://10.20.30.40:8080"

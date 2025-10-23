@@ -49,36 +49,73 @@ class ProxyPool:
         self._proxy_pool: List[Tuple[str, float]] = []
         self._current_index = 0
 
-    def _default_api_parser(self, response_data: dict) -> str:
+    def _default_api_parser(self, response_data) -> str:
         """
         Default proxy API response parser
 
         Supports the following formats:
-        - {"ip": "1.2.3.4", "port": "8080"}
-        - {"proxy": "http://1.2.3.4:8080"}
-        - {"data": {"ip": "1.2.3.4", "port": 8080}}
-        - {"data": [{"ip": "1.2.3.4", "port": 8080}]}
+        - Plain text: "218.95.37.11:25152" or multiple lines
+        - JSON: {"ip": "1.2.3.4", "port": "8080"}
+        - JSON: {"proxy": "http://1.2.3.4:8080"}
+        - JSON: {"data": {"ip": "1.2.3.4", "port": 8080}}
+        - JSON: {"data": [{"ip": "1.2.3.4", "port": 8080}]}
         """
-        if "proxy" in response_data:
-            return response_data["proxy"]
+        if isinstance(response_data, str):
+            lines = [line.strip() for line in response_data.split("\n") if line.strip()]
+            if not lines:
+                raise ValueError("Proxy API returned empty text response")
 
-        data = response_data.get("data", response_data)
+            proxy_str = lines[0]
 
-        if isinstance(data, list):
-            if not data:
-                raise ValueError(
-                    f"Proxy API returned empty data array: {response_data}"
-                )
-            data = data[0]
+            if proxy_str.startswith(("http://", "https://", "socks4://", "socks5://")):
+                parts = proxy_str.split("://", 1)
+                if len(parts) == 2 and ":" in parts[1]:
+                    return proxy_str
+                else:
+                    raise ValueError(f"Invalid proxy format: {proxy_str}")
+            else:
+                if ":" not in proxy_str:
+                    raise ValueError(
+                        f"Invalid proxy format (missing port): {proxy_str}"
+                    )
 
-        if "ip" in data and "port" in data:
-            ip = data["ip"]
-            port = data["port"]
-            if "username" in data and "password" in data:
-                username = data["username"]
-                password = data["password"]
-                return f"http://{username}:{password}@{ip}:{port}"
-            return f"http://{ip}:{port}"
+                parts = proxy_str.rsplit(":", 1)
+                if len(parts) == 2:
+                    host, port = parts
+                    try:
+                        port_num = int(port)
+                        if not (1 <= port_num <= 65535):
+                            raise ValueError(f"Invalid port number: {port}")
+                    except ValueError:
+                        raise ValueError(
+                            f"Invalid proxy format (invalid port): {proxy_str}"
+                        )
+
+                    return f"http://{proxy_str}"
+                else:
+                    raise ValueError(f"Invalid proxy format: {proxy_str}")
+
+        if isinstance(response_data, dict):
+            if "proxy" in response_data:
+                return response_data["proxy"]
+
+            data = response_data.get("data", response_data)
+
+            if isinstance(data, list):
+                if not data:
+                    raise ValueError(
+                        f"Proxy API returned empty data array: {response_data}"
+                    )
+                data = data[0]
+
+            if "ip" in data and "port" in data:
+                ip = data["ip"]
+                port = data["port"]
+                if "username" in data and "password" in data:
+                    username = data["username"]
+                    password = data["password"]
+                    return f"http://{username}:{password}@{ip}:{port}"
+                return f"http://{ip}:{port}"
 
         raise ValueError(f"Unable to parse proxy API response: {response_data}")
 
@@ -101,7 +138,12 @@ class ProxyPool:
         try:
             response = requests.get(self.config.proxy_api_url, timeout=5)
             response.raise_for_status()
-            proxy_data = response.json()
+
+            try:
+                proxy_data = response.json()
+            except ValueError:
+                proxy_data = response.text
+
             parser = self.config.proxy_api_parser or self._default_api_parser
             return parser(proxy_data)
         except Exception:
