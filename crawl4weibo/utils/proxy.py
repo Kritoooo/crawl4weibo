@@ -66,10 +66,34 @@ class ProxyPool:
                 raise ValueError("Proxy API returned empty text response")
 
             proxy_str = lines[0]
+
             if proxy_str.startswith(("http://", "https://", "socks4://", "socks5://")):
-                return proxy_str
+                parts = proxy_str.split("://", 1)
+                if len(parts) == 2 and ":" in parts[1]:
+                    return proxy_str
+                else:
+                    raise ValueError(f"Invalid proxy format: {proxy_str}")
             else:
-                return f"http://{proxy_str}"
+                if ":" not in proxy_str:
+                    raise ValueError(
+                        f"Invalid proxy format (missing port): {proxy_str}"
+                    )
+
+                parts = proxy_str.rsplit(":", 1)
+                if len(parts) == 2:
+                    host, port = parts
+                    try:
+                        port_num = int(port)
+                        if not (1 <= port_num <= 65535):
+                            raise ValueError(f"Invalid port number: {port}")
+                    except ValueError:
+                        raise ValueError(
+                            f"Invalid proxy format (invalid port): {proxy_str}"
+                        )
+
+                    return f"http://{proxy_str}"
+                else:
+                    raise ValueError(f"Invalid proxy format: {proxy_str}")
 
         if isinstance(response_data, dict):
             if "proxy" in response_data:
