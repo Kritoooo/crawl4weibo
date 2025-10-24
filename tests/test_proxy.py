@@ -407,3 +407,85 @@ class TestProxyPool:
         assert proxy is not None
         assert proxy["http"] == "http://10.20.30.40:8080"
         assert proxy["https"] == "http://10.20.30.40:8080"
+
+    @responses.activate
+    def test_get_proxy_plain_text_with_auth(self):
+        """Test parsing plain text proxy with authentication (ip:port:user:pass)"""
+        proxy_api_url = "http://api.proxy.com/get"
+        responses.add(
+            responses.GET,
+            proxy_api_url,
+            body="218.95.37.11:25152:myuser:mypass",
+            status=200,
+        )
+
+        config = ProxyPoolConfig(proxy_api_url=proxy_api_url)
+        pool = ProxyPool(config=config)
+        proxy = pool.get_proxy()
+
+        assert proxy is not None
+        assert proxy["http"] == "http://myuser:mypass@218.95.37.11:25152"
+        assert proxy["https"] == "http://myuser:mypass@218.95.37.11:25152"
+
+    @responses.activate
+    def test_get_proxy_plain_text_multiline_with_auth(self):
+        """Test parsing multiple lines with auth (takes first line)"""
+        proxy_api_url = "http://api.proxy.com/get"
+        responses.add(
+            responses.GET,
+            proxy_api_url,
+            body="218.95.37.11:25152:user1:pass1\n219.150.218.21:25089:user2:pass2",
+            status=200,
+        )
+
+        config = ProxyPoolConfig(proxy_api_url=proxy_api_url)
+        pool = ProxyPool(config=config)
+        proxy = pool.get_proxy()
+
+        assert proxy is not None
+        assert proxy["http"] == "http://user1:pass1@218.95.37.11:25152"
+        assert proxy["https"] == "http://user1:pass1@218.95.37.11:25152"
+
+    @responses.activate
+    def test_get_proxy_json_array_with_colon_format(self):
+        """Test parsing JSON array with colon-separated proxy strings"""
+        proxy_api_url = "http://api.proxy.com/get"
+        responses.add(
+            responses.GET,
+            proxy_api_url,
+            json={
+                "data": [
+                    "218.95.37.11:25152:username:password",
+                    "219.150.218.21:25089:username:password",
+                    "218.95.37.161:25015:username:password",
+                ]
+            },
+            status=200,
+        )
+
+        config = ProxyPoolConfig(proxy_api_url=proxy_api_url)
+        pool = ProxyPool(config=config)
+        proxy = pool.get_proxy()
+
+        assert proxy is not None
+        assert proxy["http"] == "http://username:password@218.95.37.11:25152"
+        assert proxy["https"] == "http://username:password@218.95.37.11:25152"
+
+    @responses.activate
+    def test_get_proxy_json_array_with_colon_format_no_auth(self):
+        """Test parsing JSON array with colon-separated proxy strings without auth"""
+        proxy_api_url = "http://api.proxy.com/get"
+        responses.add(
+            responses.GET,
+            proxy_api_url,
+            json={"data": ["10.20.30.40:8080", "50.60.70.80:9090"]},
+            status=200,
+        )
+
+        config = ProxyPoolConfig(proxy_api_url=proxy_api_url)
+        pool = ProxyPool(config=config)
+        proxy = pool.get_proxy()
+
+        assert proxy is not None
+        assert proxy["http"] == "http://10.20.30.40:8080"
+        assert proxy["https"] == "http://10.20.30.40:8080"

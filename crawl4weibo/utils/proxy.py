@@ -55,10 +55,14 @@ class ProxyPool:
 
         Supports the following formats:
         - Plain text: "218.95.37.11:25152" or multiple lines
+        - Plain text with auth: "218.95.37.11:25152:username:password"
         - JSON: {"ip": "1.2.3.4", "port": "8080"}
         - JSON: {"proxy": "http://1.2.3.4:8080"}
         - JSON: {"data": {"ip": "1.2.3.4", "port": 8080}}
         - JSON: {"data": [{"ip": "1.2.3.4", "port": 8080}]}
+        - JSON: {"data": ["218.95.37.11:25152:username:password", ...]}
+        - JSON with auth:
+          {"ip": "...", "port": "...", "username": "...", "password": "..."}
         """
         if isinstance(response_data, str):
             lines = [line.strip() for line in response_data.split("\n") if line.strip()]
@@ -79,18 +83,27 @@ class ProxyPool:
                         f"Invalid proxy format (missing port): {proxy_str}"
                     )
 
-                parts = proxy_str.rsplit(":", 1)
-                if len(parts) == 2:
-                    host, port = parts
+                parts = proxy_str.split(":")
+
+                # Validate port number
+                def validate_port(port_str: str):
                     try:
-                        port_num = int(port)
+                        port_num = int(port_str)
                         if not (1 <= port_num <= 65535):
-                            raise ValueError(f"Invalid port number: {port}")
+                            raise ValueError(f"Invalid port number: {port_str}")
                     except ValueError:
                         raise ValueError(
                             f"Invalid proxy format (invalid port): {proxy_str}"
                         )
 
+                if len(parts) == 4:
+                    host, port, username, password = parts
+                    validate_port(port)
+                    return f"http://{username}:{password}@{host}:{port}"
+
+                elif len(parts) == 2:
+                    host, port = parts
+                    validate_port(port)
                     return f"http://{proxy_str}"
                 else:
                     raise ValueError(f"Invalid proxy format: {proxy_str}")
@@ -106,9 +119,14 @@ class ProxyPool:
                     raise ValueError(
                         f"Proxy API returned empty data array: {response_data}"
                     )
-                data = data[0]
+                first_item = data[0]
 
-            if "ip" in data and "port" in data:
+                if isinstance(first_item, str):
+                    return self._default_api_parser(first_item)
+
+                data = first_item
+
+            if isinstance(data, dict) and "ip" in data and "port" in data:
                 ip = data["ip"]
                 port = data["port"]
                 if "username" in data and "password" in data:
