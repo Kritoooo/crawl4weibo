@@ -489,3 +489,50 @@ class TestProxyPool:
         assert proxy is not None
         assert proxy["http"] == "http://10.20.30.40:8080"
         assert proxy["https"] == "http://10.20.30.40:8080"
+
+    @responses.activate
+    def test_get_proxy_with_special_chars_in_credentials(self):
+        """Test URL encoding of special characters in username/password"""
+        proxy_api_url = "http://api.proxy.com/get"
+        # Test with special characters: @, :, /
+        responses.add(
+            responses.GET,
+            proxy_api_url,
+            json={
+                "ip": "1.2.3.4",
+                "port": "8080",
+                "username": "user@domain",
+                "password": "pass:word/123",
+            },
+            status=200,
+        )
+
+        config = ProxyPoolConfig(proxy_api_url=proxy_api_url)
+        pool = ProxyPool(config=config)
+        proxy = pool.get_proxy()
+
+        assert proxy is not None
+        # Special characters should be URL encoded
+        assert proxy["http"] == "http://user%40domain:pass%3Aword%2F123@1.2.3.4:8080"
+        assert proxy["https"] == "http://user%40domain:pass%3Aword%2F123@1.2.3.4:8080"
+
+    @responses.activate
+    def test_get_proxy_plain_text_with_special_chars_in_credentials(self):
+        """Test URL encoding for plain text format with special chars (excluding colon)"""
+        proxy_api_url = "http://api.proxy.com/get"
+        # Note: colon (:) cannot be used in plain text format as it's the delimiter
+        # Test with @, /, and other special chars
+        responses.add(
+            responses.GET,
+            proxy_api_url,
+            body="10.20.30.40:9090:user@test:p@ss/w0rd",
+            status=200,
+        )
+
+        config = ProxyPoolConfig(proxy_api_url=proxy_api_url)
+        pool = ProxyPool(config=config)
+        proxy = pool.get_proxy()
+
+        assert proxy is not None
+        assert proxy["http"] == "http://user%40test:p%40ss%2Fw0rd@10.20.30.40:9090"
+        assert proxy["https"] == "http://user%40test:p%40ss%2Fw0rd@10.20.30.40:9090"

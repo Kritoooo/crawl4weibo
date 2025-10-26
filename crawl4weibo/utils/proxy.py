@@ -8,6 +8,7 @@ import random
 import time
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Tuple
+from urllib.parse import quote
 
 import requests
 
@@ -89,17 +90,20 @@ class ProxyPool:
                 def validate_port(port_str: str):
                     try:
                         port_num = int(port_str)
-                        if not (1 <= port_num <= 65535):
-                            raise ValueError(f"Invalid port number: {port_str}")
                     except ValueError:
                         raise ValueError(
                             f"Invalid proxy format (invalid port): {proxy_str}"
                         )
 
+                    if not (1 <= port_num <= 65535):
+                        raise ValueError(f"Invalid port number: {port_str}")
+
                 if len(parts) == 4:
                     host, port, username, password = parts
                     validate_port(port)
-                    return f"http://{username}:{password}@{host}:{port}"
+                    encoded_user = quote(username, safe="")
+                    encoded_pass = quote(password, safe="")
+                    return f"http://{encoded_user}:{encoded_pass}@{host}:{port}"
 
                 elif len(parts) == 2:
                     host, port = parts
@@ -132,7 +136,9 @@ class ProxyPool:
                 if "username" in data and "password" in data:
                     username = data["username"]
                     password = data["password"]
-                    return f"http://{username}:{password}@{ip}:{port}"
+                    encoded_user = quote(username, safe="")
+                    encoded_pass = quote(password, safe="")
+                    return f"http://{encoded_user}:{encoded_pass}@{ip}:{port}"
                 return f"http://{ip}:{port}"
 
         raise ValueError(f"Unable to parse proxy API response: {response_data}")
