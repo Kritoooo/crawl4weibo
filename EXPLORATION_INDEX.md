@@ -53,7 +53,7 @@ Quick reference material including:
 
 ---
 
-### 4. PERFORMANCE_TESTING_GUIDE.md (Implementation Guide)
+### 4. benchmarks/docs/PERFORMANCE_TESTING_GUIDE.md (Implementation Guide)
 **16 KB | Practical Testing Methodology**
 
 Complete guide for designing performance/stress tests with:
@@ -121,7 +121,7 @@ Complete guide for designing performance/stress tests with:
 3. Look at component descriptions
 
 **Design a performance test:**
-1. Read PERFORMANCE_TESTING_GUIDE.md sections 1-2 (metrics & scenarios)
+1. Read benchmarks/docs/PERFORMANCE_TESTING_GUIDE.md sections 1-2 (metrics & scenarios)
 2. Choose a test scenario that fits your needs
 3. Adapt the code examples
 4. Refer to QUICK_REFERENCE.md for API details
@@ -152,7 +152,7 @@ Complete guide for designing performance/stress tests with:
 | EXPLORATION_SUMMARY | 12 KB | 12 | Overview |
 | ARCHITECTURE_ANALYSIS | 16 KB | 10 | Technical depth |
 | QUICK_REFERENCE | 7.2 KB | 8 | Quick lookup |
-| PERFORMANCE_TESTING_GUIDE | 16 KB | 15 | Implementation |
+| benchmarks/docs/PERFORMANCE_TESTING_GUIDE | 16 KB | 15 | Implementation |
 
 **Total:** 51 KB of documentation
 
@@ -189,7 +189,7 @@ Complete guide for designing performance/stress tests with:
 3. Keep QUICK_REFERENCE.md handy (10 min)
 
 ### Path 2: I want to design tests (45 minutes)
-1. Read PERFORMANCE_TESTING_GUIDE.md sections 1-3 (20 min)
+1. Read benchmarks/docs/PERFORMANCE_TESTING_GUIDE.md sections 1-3 (20 min)
 2. Review test scenarios in section 4-8 (15 min)
 3. Reference QUICK_REFERENCE.md for APIs (10 min)
 
@@ -237,7 +237,7 @@ All documents are in the project root directory:
 ├── EXPLORATION_SUMMARY.md (this index is in here)
 ├── ARCHITECTURE_ANALYSIS.md
 ├── QUICK_REFERENCE.md
-├── PERFORMANCE_TESTING_GUIDE.md
+├── benchmarks/docs/PERFORMANCE_TESTING_GUIDE.md
 └── EXPLORATION_INDEX.md (this file)
 ```
 
@@ -253,15 +253,15 @@ All documents are in the project root directory:
 
 ### For Performance Engineers
 1. ARCHITECTURE_ANALYSIS.md section 1-3 - Understand the design
-2. PERFORMANCE_TESTING_GUIDE.md section 1-2 - Understand metrics
-3. PERFORMANCE_TESTING_GUIDE.md section 3-8 - Learn test scenarios
+2. benchmarks/docs/PERFORMANCE_TESTING_GUIDE.md section 1-2 - Understand metrics
+3. benchmarks/docs/PERFORMANCE_TESTING_GUIDE.md section 3-8 - Learn test scenarios
 4. QUICK_REFERENCE.md - API reference while coding
 
 ### For Maintainers
 1. ARCHITECTURE_ANALYSIS.md - Full technical overview
 2. crawl4weibo/ code files - Implementation details
 3. tests/ - Test coverage and patterns
-4. PERFORMANCE_TESTING_GUIDE.md - Stress testing approach
+4. benchmarks/docs/PERFORMANCE_TESTING_GUIDE.md - Stress testing approach
 
 ---
 
@@ -276,7 +276,7 @@ All documents are in the project root directory:
 
 **Rate limiting:**
 - ARCHITECTURE_ANALYSIS.md section 2
-- PERFORMANCE_TESTING_GUIDE.md overview
+- benchmarks/docs/PERFORMANCE_TESTING_GUIDE.md overview
 - QUICK_REFERENCE.md rate limiting table
 
 **Proxy management:**
@@ -286,11 +286,11 @@ All documents are in the project root directory:
 
 **Test files:**
 - ARCHITECTURE_ANALYSIS.md section 5
-- PERFORMANCE_TESTING_GUIDE.md test scenarios
+- benchmarks/docs/PERFORMANCE_TESTING_GUIDE.md test scenarios
 - Source: tests/ directory
 
 **Performance metrics:**
-- PERFORMANCE_TESTING_GUIDE.md section 2
+- benchmarks/docs/PERFORMANCE_TESTING_GUIDE.md section 2
 - EXPLORATION_SUMMARY.md performance section
 - QUICK_REFERENCE.md baselines section
 
@@ -332,7 +332,7 @@ To update: Review any changes to:
 | What is crawl4weibo? | EXPLORATION_SUMMARY | Project Overview |
 | How do I use the API? | QUICK_REFERENCE | API Usage Examples |
 | How does rate limiting work? | ARCHITECTURE_ANALYSIS | Section 2 |
-| How do I test performance? | PERFORMANCE_TESTING_GUIDE | All sections |
+| How do I test performance? | benchmarks/docs/PERFORMANCE_TESTING_GUIDE | All sections |
 | What are the limitations? | ARCHITECTURE_ANALYSIS | Key Characteristics |
 | How do proxies work? | ARCHITECTURE_ANALYSIS | Section 4 |
 | What tests exist? | EXPLORATION_SUMMARY | Test Files Overview |

@@ -249,7 +249,7 @@ class TopicCrawler:
     4. Measure throughput (posts per second)
     """
 
-    def __init__(self, cookies: str = None, proxy_api_url: str = None):
+    def __init__(self, cookies: str = None, proxy_api_url: str = None, use_once_proxy: bool = False):
         """
         Initialize topic crawler.
 
@@ -259,6 +259,7 @@ class TopicCrawler:
         """
         self.cookies = cookies
         self.proxy_api_url = proxy_api_url
+        self.use_once_proxy = use_once_proxy
         self.lock = threading.Lock()
 
     def _create_client(self) -> WeiboClient:
@@ -266,6 +267,7 @@ class TopicCrawler:
         return WeiboClient(
             cookies=self.cookies,
             proxy_api_url=self.proxy_api_url,
+            use_once_proxy=self.use_once_proxy,
             log_level="WARNING"  # Reduce log noise during testing
         )
 
@@ -805,9 +807,12 @@ if __name__ == "__main__":
     proxy_input = input("Enter proxy API URL (press Enter to skip): ").strip()
     proxy_api_url = proxy_input if proxy_input else None
 
+    use_once_proxy_input = input("Use one-time proxy mode? (y/n, default: n): ").strip().lower()
+    use_once_proxy = use_once_proxy_input == 'y'
+
     query = input("Enter search query (default: 'Python'): ").strip() or "Python"
 
-    crawler = TopicCrawler(cookies=cookies, proxy_api_url=proxy_api_url)
+    crawler = TopicCrawler(cookies=cookies, proxy_api_url=proxy_api_url, use_once_proxy=use_once_proxy)
 
     # Test menu
     print("\nSelect test type:")

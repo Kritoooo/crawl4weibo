@@ -26,7 +26,7 @@
 ### 方法 1: 命令行交互式测试（推荐）
 
 ```bash
-cd tests
+cd benchmarks
 python test_performance.py
 ```
 
@@ -40,19 +40,19 @@ python test_performance.py
 
 ```bash
 # 运行所有性能测试
-pytest tests/test_performance.py -v -m integration
+pytest benchmarks/test_performance.py -v -m integration
 
 # 运行特定测试
-pytest tests/test_performance.py::test_sequential_topic_crawl -v
-pytest tests/test_performance.py::test_concurrent_topic_crawl -v
-pytest tests/test_performance.py::test_timed_crawl -v
-pytest tests/test_performance.py::test_proxy_comparison -v
+pytest benchmarks/test_performance.py::test_sequential_topic_crawl -v
+pytest benchmarks/test_performance.py::test_concurrent_topic_crawl -v
+pytest benchmarks/test_performance.py::test_timed_crawl -v
+pytest benchmarks/test_performance.py::test_proxy_comparison -v
 ```
 
 ### 方法 3: 编程方式
 
 ```python
-from tests.test_performance import TopicCrawler
+from benchmarks.test_performance import TopicCrawler
 
 # 初始化爬虫
 crawler = TopicCrawler(
@@ -247,7 +247,7 @@ Failed Posts:             2
 测试爬取"Python编程"话题的博文，了解基准性能。
 
 ```python
-from tests.test_performance import TopicCrawler
+from benchmarks.test_performance import TopicCrawler
 
 crawler = TopicCrawler(cookies="your_cookies")
 
@@ -548,7 +548,7 @@ test_record = {
 你可以根据需要修改测试脚本：
 
 ```python
-# 修改 test_performance.py
+# 修改 benchmarks/test_performance.py
 
 class TopicCrawler:
     # 添加自定义测试方法
@@ -576,7 +576,7 @@ jobs:
         uses: actions/setup-python@v2
       - name: Run performance tests
         run: |
-          pytest tests/test_performance.py::test_timed_crawl -v
+          pytest benchmarks/test_performance.py::test_timed_crawl -v
         env:
           WEIBO_COOKIES: ${{ secrets.WEIBO_COOKIES }}
 ```

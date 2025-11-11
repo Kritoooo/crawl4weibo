@@ -288,7 +288,7 @@ This exploration has created three comprehensive reference documents in the proj
    - Test running commands
    - Performance testing challenges
 
-3. **PERFORMANCE_TESTING_GUIDE.md** (600+ lines)
+3. **benchmarks/docs/PERFORMANCE_TESTING_GUIDE.md** (600+ lines)
    - Comprehensive testing methodology
    - 5 test scenarios with code examples
    - Metrics to measure
