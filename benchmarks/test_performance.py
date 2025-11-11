@@ -832,10 +832,10 @@ if __name__ == "__main__":
         metrics.print_summary("Sequential Crawl Test")
 
     elif choice == "2":
-        pages = int(input("Search pages (default: 2): ").strip() or "2")
-        max_posts = input("Max posts (default: 30): ").strip()
-        max_posts = int(max_posts) if max_posts else 30
-        workers = int(input("Concurrent workers (default: 5): ").strip() or "5")
+        pages = int(input("Search pages (default: 20): ").strip() or "20")
+        max_posts = input("Max posts (default: 200): ").strip()
+        max_posts = int(max_posts) if max_posts else 200
+        workers = int(input("Concurrent workers (default: 10): ").strip() or "10")
 
         metrics = crawler.crawl_topic_concurrent(query, pages, max_posts, workers)
         metrics.print_summary("Concurrent Crawl Test")
