@@ -84,7 +84,7 @@ def main():
             for post_results in download_results.values()
         )
 
-        print(f"Download statistics:")
+        print("Download statistics:")
         print(f"  Posts processed: {total_posts}")
         print(f"  Total images: {total_images}")
         print(f"  Successfully downloaded: {successful_downloads}")

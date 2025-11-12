@@ -18,6 +18,7 @@ from ..utils.downloader import ImageDownloader
 from ..utils.logger import setup_logger
 from ..utils.parser import WeiboParser
 from ..utils.proxy import ProxyPool, ProxyPoolConfig
+from ..utils.rate_limit import RateLimitConfig, rate_limit
 
 
 class WeiboClient:
@@ -35,6 +36,7 @@ class WeiboClient:
         proxy_pool_size: int = 10,
         proxy_fetch_strategy: str = "random",
         use_once_proxy: bool = False,
+        rate_limit_config: Optional[RateLimitConfig] = None,
     ):
         """
         Initialize Weibo client
@@ -56,6 +58,9 @@ class WeiboClient:
             use_once_proxy: Use one-time proxy mode - fetch fresh proxy
                 for each request without pooling, ideal for single-use IP
                 providers. Default False (uses pooling mode)
+            rate_limit_config: Rate limiting configuration. If not provided,
+                uses default configuration that automatically adjusts delays
+                based on proxy pool size. Larger pools = shorter delays.
         """
         self.logger = setup_logger(
             level=getattr(__import__("logging"), log_level.upper()), log_file=log_file
@@ -84,7 +89,6 @@ class WeiboClient:
 
         self.parser = WeiboParser()
 
-        # Initialize proxy pool configuration and proxy pool
         proxy_config = ProxyPoolConfig(
             proxy_api_url=proxy_api_url,
             proxy_api_parser=proxy_api_parser,
@@ -94,8 +98,7 @@ class WeiboClient:
             use_once_proxy=use_once_proxy,
         )
         self.proxy_pool = ProxyPool(config=proxy_config)
-
-        # Initialize image downloader with proxy pool support
+        self.rate_limit = rate_limit_config or RateLimitConfig()
         self.downloader = ImageDownloader(
             session=self.session,
             download_dir="./weibo_images",
@@ -294,6 +297,7 @@ class WeiboClient:
         self.logger.info(f"Fetched user: {user.screen_name}")
         return user
 
+    @rate_limit()
     def get_user_posts(
         self, uid: str, page: int = 1, expand: bool = False, use_proxy: bool = True
     ) -> List[Post]:
@@ -309,8 +313,6 @@ class WeiboClient:
         Returns:
             List of Post objects
         """
-        time.sleep(random.uniform(1, 3))
-
         url = "https://m.weibo.cn/api/container/getIndex"
         params = {"containerid": f"107603{uid}", "page": page}
 
@@ -359,6 +361,7 @@ class WeiboClient:
 
         return Post.from_dict(post_data)
 
+    @rate_limit()
     def search_users(
         self, query: str, page: int = 1, count: int = 10, use_proxy: bool = True
     ) -> List[User]:
@@ -374,8 +377,6 @@ class WeiboClient:
         Returns:
             List of User objects
         """
-        time.sleep(random.uniform(1, 3))
-
         url = "https://m.weibo.cn/api/container/getIndex"
         params = {
             "containerid": f"100103type=3&q={query}",
@@ -399,6 +400,7 @@ class WeiboClient:
         self.logger.info(f"Found {len(users)} users")
         return users
 
+    @rate_limit()
     def search_posts(
         self, query: str, page: int = 1, use_proxy: bool = True
     ) -> List[Post]:
@@ -413,8 +415,6 @@ class WeiboClient:
         Returns:
             List of Post objects
         """
-        time.sleep(random.uniform(1, 3))
-
         url = "https://m.weibo.cn/api/container/getIndex"
         params = {"containerid": f"100103type=1&q={query}", "page": page}
 
@@ -471,9 +471,6 @@ class WeiboClient:
                     break
 
                 page += 1
-
-                if page <= max_pages:
-                    time.sleep(random.uniform(2, 4))
 
             except Exception as e:
                 self.logger.error(f"Error fetching page {page}: {e}")
@@ -572,9 +569,6 @@ class WeiboClient:
             if not posts:
                 break
             all_posts.extend(posts)
-
-            if page < pages:
-                time.sleep(random.uniform(2, 4))
 
         subdir = f"user_{uid}"
 
