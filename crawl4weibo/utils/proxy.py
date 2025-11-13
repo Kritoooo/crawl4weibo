@@ -100,6 +100,9 @@ class ProxyPool:
         ]
 
     def _is_pool_full(self) -> bool:
+        """
+        Check if the proxy pool has reached its maximum configured size.
+        """
         return len(self._proxy_pool) >= self.config.pool_size
 
     def get_proxy(self) -> Optional[Dict[str, str]]:
@@ -164,6 +167,13 @@ class ProxyPool:
         return len(self._proxy_pool)
 
     def clear_pool(self):
+        """
+        Clear all proxies from the pool and reset internal buffers.
+
+        This method removes all proxies from the proxy pool, resets the current index,
+        and empties the once mode buffer. After calling this method, the proxy pool
+        will be empty and ready for new proxies to be added.
+        """
         self._proxy_pool = []
         self._current_index = 0
         self._once_mode_buffer = []
@@ -182,9 +192,21 @@ class ProxyPool:
         return bool(self.config.proxy_api_url or self._proxy_pool)
 
     def get_pool_capacity(self) -> int:
+        """
+        Get proxy pool capacity (maximum number of proxies allowed in the pool)
+
+        Returns:
+            Maximum proxy pool capacity
+        """
         return self.config.pool_size
 
     def get_once_buffer_size(self) -> int:
+        """
+        Get current once mode buffer size (only relevant in once mode)
+
+        Returns:
+            Number of proxies remaining in once mode buffer
+        """
         return len(self._once_mode_buffer)
 
     def remove_proxy(self, proxy_url: str) -> bool:
