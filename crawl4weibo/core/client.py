@@ -7,7 +7,7 @@ Weibo Crawler Client - Based on successfully tested code
 import random
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 
@@ -30,12 +30,7 @@ class WeiboClient:
         log_level: str = "INFO",
         log_file: Optional[str] = None,
         user_agent: Optional[str] = None,
-        proxy_api_url: Optional[str] = None,
-        proxy_api_parser: Optional[Callable[[dict], str]] = None,
-        dynamic_proxy_ttl: int = 300,
-        proxy_pool_size: int = 10,
-        proxy_fetch_strategy: str = "random",
-        use_once_proxy: bool = False,
+        proxy_config: Optional[ProxyPoolConfig] = None,
         rate_limit_config: Optional[RateLimitConfig] = None,
     ):
         """
@@ -46,18 +41,9 @@ class WeiboClient:
             log_level: Logging level
             log_file: Log file path
             user_agent: Optional User-Agent string
-            proxy_api_url: Dynamic proxy API URL, e.g.
-                'http://api.proxy.com/get?format=json'
-            proxy_api_parser: Custom proxy API response parser function,
-                receives JSON response and returns proxy URL string
-            dynamic_proxy_ttl: Dynamic proxy expiration time (seconds),
-                default 300 seconds (5 minutes)
-            proxy_pool_size: Proxy pool capacity, default 10
-            proxy_fetch_strategy: Proxy fetch strategy, 'random' or
-                'round_robin', default random
-            use_once_proxy: Use one-time proxy mode - fetch fresh proxy
-                for each request without pooling, ideal for single-use IP
-                providers. Default False (uses pooling mode)
+            proxy_config: Proxy pool configuration object. If not provided,
+                proxy will be disabled. Use ProxyPoolConfig to configure
+                proxy settings like API URL, TTL, pool size, etc.
             rate_limit_config: Rate limiting configuration. If not provided,
                 uses default configuration that automatically adjusts delays
                 based on proxy pool size. Larger pools = shorter delays.
@@ -89,14 +75,6 @@ class WeiboClient:
 
         self.parser = WeiboParser()
 
-        proxy_config = ProxyPoolConfig(
-            proxy_api_url=proxy_api_url,
-            proxy_api_parser=proxy_api_parser,
-            dynamic_proxy_ttl=dynamic_proxy_ttl,
-            pool_size=proxy_pool_size,
-            fetch_strategy=proxy_fetch_strategy,
-            use_once_proxy=use_once_proxy,
-        )
         self.proxy_pool = ProxyPool(config=proxy_config)
         self.rate_limit = rate_limit_config or RateLimitConfig()
         self.downloader = ImageDownloader(
@@ -105,16 +83,17 @@ class WeiboClient:
             proxy_pool=self.proxy_pool,
         )
 
-        if proxy_api_url:
-            proxy_mode = "one-time" if use_once_proxy else "pooling"
+        if proxy_config and proxy_config.proxy_api_url:
+            proxy_mode = "one-time" if proxy_config.use_once_proxy else "pooling"
             self.logger.info(
                 f"Proxy enabled in {proxy_mode} mode "
-                f"(API: {proxy_api_url}"
+                f"(API: {proxy_config.proxy_api_url}"
                 + (
                     ""
-                    if use_once_proxy
-                    else f", Capacity: {proxy_pool_size}, TTL: {dynamic_proxy_ttl}s, "
-                    f"Strategy: {proxy_fetch_strategy}"
+                    if proxy_config.use_once_proxy
+                    else f", Capacity: {proxy_config.pool_size}, "
+                    f"TTL: {proxy_config.dynamic_proxy_ttl}s, "
+                    f"Strategy: {proxy_config.fetch_strategy}"
                 )
                 + ")"
             )

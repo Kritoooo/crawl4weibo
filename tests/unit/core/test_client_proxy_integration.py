@@ -6,6 +6,7 @@ import pytest
 import responses
 
 from crawl4weibo import WeiboClient
+from crawl4weibo.utils.proxy import ProxyPoolConfig
 
 
 @pytest.mark.unit
@@ -52,7 +53,8 @@ class TestProxyElimination:
             status=200,
         )
 
-        client = WeiboClient(proxy_api_url=proxy_api_url, proxy_pool_size=5)
+        proxy_config = ProxyPoolConfig(proxy_api_url=proxy_api_url, pool_size=5)
+        client = WeiboClient(proxy_config=proxy_config)
 
         client.add_proxy("http://10.20.30.40:8080")
         initial_pool_size = client.get_proxy_pool_size()
@@ -134,7 +136,8 @@ class TestProxyElimination:
             status=200,
         )
 
-        client = WeiboClient(proxy_api_url=proxy_api_url, use_once_proxy=True)
+        proxy_config = ProxyPoolConfig(proxy_api_url=proxy_api_url, use_once_proxy=True)
+        client = WeiboClient(proxy_config=proxy_config)
 
         assert client.get_proxy_pool_size() == 0
 

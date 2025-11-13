@@ -6,6 +6,7 @@ import pytest
 import responses
 
 from crawl4weibo import Post, WeiboClient
+from crawl4weibo.utils.proxy import ProxyPoolConfig
 
 
 @pytest.mark.unit
@@ -190,7 +191,8 @@ class TestSearchPostsByCount:
             status=200,
         )
 
-        client = WeiboClient(proxy_api_url=proxy_api_url)
+        proxy_config = ProxyPoolConfig(proxy_api_url=proxy_api_url)
+        client = WeiboClient(proxy_config=proxy_config)
 
         with patch.object(
             client.proxy_pool, "get_proxy", wraps=client.proxy_pool.get_proxy

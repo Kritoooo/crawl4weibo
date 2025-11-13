@@ -20,12 +20,16 @@ from .exceptions.base import (
 from .models.post import Post
 from .models.user import User
 from .utils.downloader import ImageDownloader
+from .utils.proxy import ProxyPoolConfig
+from .utils.rate_limit import RateLimitConfig
 
 __all__ = [
     "WeiboClient",
     "User",
     "Post",
     "ImageDownloader",
+    "ProxyPoolConfig",
+    "RateLimitConfig",
     "CrawlError",
     "AuthenticationError",
     "RateLimitError",

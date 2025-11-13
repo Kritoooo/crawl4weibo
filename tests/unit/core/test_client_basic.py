@@ -6,6 +6,7 @@ import pytest
 import responses
 
 from crawl4weibo import Post, User, WeiboClient
+from crawl4weibo.utils.proxy import ProxyPoolConfig
 
 
 @pytest.mark.unit
@@ -47,7 +48,8 @@ class TestWeiboClient:
     def test_client_with_proxy_initialization(self):
         """Test client initialization with proxy"""
         proxy_api_url = "http://api.proxy.com/get"
-        client = WeiboClient(proxy_api_url=proxy_api_url)
+        proxy_config = ProxyPoolConfig(proxy_api_url=proxy_api_url)
+        client = WeiboClient(proxy_config=proxy_config)
 
         assert client is not None
         assert client.proxy_pool is not None
@@ -105,7 +107,8 @@ class TestWeiboClient:
             status=200,
         )
 
-        client = WeiboClient(proxy_api_url=proxy_api_url)
+        proxy_config = ProxyPoolConfig(proxy_api_url=proxy_api_url)
+        client = WeiboClient(proxy_config=proxy_config)
 
         with patch.object(
             client.proxy_pool, "get_proxy", wraps=client.proxy_pool.get_proxy
@@ -138,7 +141,8 @@ class TestWeiboClient:
             status=200,
         )
 
-        client = WeiboClient(proxy_api_url=proxy_api_url)
+        proxy_config = ProxyPoolConfig(proxy_api_url=proxy_api_url)
+        client = WeiboClient(proxy_config=proxy_config)
 
         with patch.object(client.proxy_pool, "get_proxy") as mock_get_proxy:
             user = client.get_user_by_uid("2656274875", use_proxy=False)
