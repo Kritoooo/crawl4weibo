@@ -6,6 +6,7 @@ import pytest
 import responses
 
 from crawl4weibo import WeiboClient
+from crawl4weibo.utils.proxy import ProxyPoolConfig
 
 
 @pytest.mark.unit
@@ -49,7 +50,8 @@ class TestOnceProxyRetry:
             status=200,
         )
 
-        client = WeiboClient(proxy_api_url=proxy_api_url, use_once_proxy=True)
+        proxy_config = ProxyPoolConfig(proxy_api_url=proxy_api_url, use_once_proxy=True)
+        client = WeiboClient(proxy_config=proxy_config)
 
         start_time = time.time()
         user = client.get_user_by_uid("2656274875")
@@ -95,7 +97,8 @@ class TestOnceProxyRetry:
             status=200,
         )
 
-        client = WeiboClient(proxy_api_url=proxy_api_url, use_once_proxy=True)
+        proxy_config = ProxyPoolConfig(proxy_api_url=proxy_api_url, use_once_proxy=True)
+        client = WeiboClient(proxy_config=proxy_config)
 
         start_time = time.time()
         user = client.get_user_by_uid("2656274875")
@@ -135,7 +138,8 @@ class TestOnceProxyRetry:
             status=200,
         )
 
-        client = WeiboClient(proxy_api_url=proxy_api_url, use_once_proxy=False)
+        proxy_config = ProxyPoolConfig(proxy_api_url=proxy_api_url, use_once_proxy=False)
+        client = WeiboClient(proxy_config=proxy_config)
 
         start_time = time.time()
         user = client.get_user_by_uid("2656274875")
