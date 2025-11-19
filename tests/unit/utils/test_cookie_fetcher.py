@@ -4,12 +4,15 @@
 Unit tests for cookie_fetcher module
 """
 
+import asyncio
+from unittest.mock import Mock, patch
+
 import pytest
 import responses
-from unittest.mock import patch, Mock
 
 from crawl4weibo.utils.cookie_fetcher import (
     CookieFetcher,
+    _is_event_loop_running,
     fetch_cookies_simple,
 )
 
@@ -214,3 +217,188 @@ class TestCookieFetcherIntegration:
         # Verify the request was made with custom UA
         assert len(responses.calls) == 1
         assert responses.calls[0].request.headers["User-Agent"] == custom_ua
+
+
+class TestEventLoopDetection:
+    """Test event loop detection functionality"""
+
+    def test_is_event_loop_running_no_loop(self):
+        """Test event loop detection when no loop is running"""
+        assert _is_event_loop_running() is False
+
+    @pytest.mark.asyncio
+    async def test_is_event_loop_running_with_loop(self):
+        """Test event loop detection when loop is running"""
+        assert _is_event_loop_running() is True
+
+
+class TestAsyncBrowserSupport:
+    """Test async browser cookie fetching"""
+
+    def test_browser_mode_routes_to_sync_by_default(self):
+        """Test browser mode uses sync API when not in event loop"""
+        fetcher = CookieFetcher(use_browser=True)
+
+        with patch.object(
+            fetcher, "_fetch_with_browser_sync", return_value={"test": "cookie"}
+        ) as mock_sync, patch.object(
+            fetcher, "_fetch_with_browser_async_wrapper"
+        ) as mock_async:
+            cookies = fetcher._fetch_with_browser()
+
+            # Should call sync version
+            mock_sync.assert_called_once()
+            mock_async.assert_not_called()
+            assert cookies == {"test": "cookie"}
+
+    @pytest.mark.asyncio
+    async def test_browser_mode_routes_to_async_in_event_loop(self):
+        """Test browser mode uses async API when in event loop"""
+        fetcher = CookieFetcher(use_browser=True)
+
+        with patch.object(
+            fetcher, "_fetch_with_browser_sync"
+        ) as mock_sync, patch.object(
+            fetcher,
+            "_fetch_with_browser_async_wrapper",
+            return_value={"test": "cookie"},
+        ) as mock_async:
+            cookies = fetcher._fetch_with_browser()
+
+            # Should call async wrapper version
+            mock_async.assert_called_once()
+            mock_sync.assert_not_called()
+            assert cookies == {"test": "cookie"}
+
+    def test_async_wrapper_executes_in_thread(self):
+        """Test async wrapper properly executes async code in thread"""
+        fetcher = CookieFetcher(use_browser=True)
+
+        # Mock the async method
+        async def mock_async_fetch(timeout):
+            await asyncio.sleep(0.01)
+            return {"async": "cookie"}
+
+        with patch.object(
+            fetcher, "_fetch_with_browser_async", side_effect=mock_async_fetch
+        ):
+            # This should work even though we're not in an async context
+            cookies = fetcher._fetch_with_browser_async_wrapper(timeout=30)
+            assert cookies == {"async": "cookie"}
+
+    @pytest.mark.asyncio
+    async def test_fetch_with_browser_async_full_flow(self):
+        """Test the full async browser flow with mocked Playwright"""
+        fetcher = CookieFetcher(use_browser=True)
+
+        # Create comprehensive mocks for async Playwright
+        mock_cookie_list = [
+            {"name": "async_cookie1", "value": "async_value1"},
+            {"name": "async_cookie2", "value": "async_value2"},
+        ]
+
+        # Create async mock functions
+        async def mock_goto(*args, **kwargs):
+            pass
+
+        async def mock_evaluate(*args, **kwargs):
+            pass
+
+        async def mock_cookies():
+            return mock_cookie_list
+
+        async def mock_new_page():
+            return mock_page
+
+        async def mock_set_headers(*args, **kwargs):
+            pass
+
+        async def mock_close():
+            pass
+
+        async def mock_new_context(*args, **kwargs):
+            return mock_context
+
+        async def mock_launch(*args, **kwargs):
+            return mock_browser
+
+        # Mock async context manager and page operations
+        mock_page = Mock()
+        mock_page.goto = Mock(side_effect=mock_goto)
+        mock_page.evaluate = Mock(side_effect=mock_evaluate)
+
+        mock_context = Mock()
+        mock_context.cookies = Mock(side_effect=mock_cookies)
+        mock_context.new_page = Mock(side_effect=mock_new_page)
+        mock_context.set_extra_http_headers = Mock(side_effect=mock_set_headers)
+        mock_context.close = Mock(side_effect=mock_close)
+
+        mock_browser = Mock()
+        mock_browser.new_context = Mock(side_effect=mock_new_context)
+        mock_browser.close = Mock(side_effect=mock_close)
+
+        mock_chromium = Mock()
+        mock_chromium.launch = Mock(side_effect=mock_launch)
+
+        mock_playwright_instance = Mock()
+        mock_playwright_instance.chromium = mock_chromium
+
+        # Mock the async_playwright context manager
+        class MockAsyncPlaywright:
+            async def __aenter__(self):
+                return mock_playwright_instance
+
+            async def __aexit__(self, *args):
+                pass
+
+        # Patch the import and execute
+        with patch("builtins.__import__") as mock_import:
+
+            def custom_import(name, *args, **kwargs):
+                if name == "playwright.async_api":
+                    module = Mock()
+                    module.async_playwright = lambda: MockAsyncPlaywright()
+                    return module
+                return __import__(name, *args, **kwargs)
+
+            mock_import.side_effect = custom_import
+
+            # Execute the async method
+            cookies = await fetcher._fetch_with_browser_async(timeout=30)
+
+            # Verify results
+            assert isinstance(cookies, dict)
+            assert len(cookies) == 2
+            assert cookies["async_cookie1"] == "async_value1"
+            assert cookies["async_cookie2"] == "async_value2"
+
+            # Verify the flow was called correctly
+            mock_chromium.launch.assert_called_once()
+            mock_browser.new_context.assert_called_once()
+            mock_context.set_extra_http_headers.assert_called_once()
+            mock_context.new_page.assert_called_once()
+            mock_page.goto.assert_called_once()
+            mock_context.cookies.assert_called_once()
+            assert mock_context.close.call_count == 1
+            assert mock_browser.close.call_count == 1
+
+    def test_fetch_with_browser_async_import_error(self):
+        """Test async browser raises ImportError when playwright not installed"""
+        fetcher = CookieFetcher(use_browser=True)
+
+        # Mock the import to raise ImportError
+        with patch("builtins.__import__") as mock_import:
+
+            def custom_import(name, *args, **kwargs):
+                if name == "playwright.async_api":
+                    raise ImportError("No module named 'playwright'")
+                return __import__(name, *args, **kwargs)
+
+            mock_import.side_effect = custom_import
+
+            # Should raise ImportError with helpful message
+            with pytest.raises(ImportError) as exc_info:
+                asyncio.run(fetcher._fetch_with_browser_async(timeout=30))
+
+            assert "Playwright is required" in str(exc_info.value)
+            assert "uv add playwright" in str(exc_info.value)
