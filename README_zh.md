@@ -35,6 +35,7 @@ playwright install chromium
 
 # 或使用 uv:
 uv run playwright install chromium
+```
 
 ## 快速开始
 ```python
