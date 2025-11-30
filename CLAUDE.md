@@ -144,10 +144,58 @@ crawl4weibo/
 
 ## Testing Guidelines
 
+### General Principles
+
 - Place tests in `tests/` mirroring module structure
 - Use `@responses.activate` for mocking HTTP calls
 - Mark network-consuming tests with `@pytest.mark.integration`
-- When testing proxy parsers:
+- **IMPORTANT**: Unit tests should NEVER use rate limiting since they mock all external requests and don't need throttling
+
+### Rate Limiting in Tests
+
+**Unit tests** should disable rate limiting to avoid unnecessary delays:
+
+```python
+# Use the pytest fixture (recommended)
+def test_get_user(client_no_rate_limit):
+    user = client_no_rate_limit.get_user_by_uid("123")
+    assert user is not None
+
+# Or create client manually with rate limiting disabled
+def test_something():
+    rate_config = RateLimitConfig(disable_delay=True)
+    client = WeiboClient(rate_limit_config=rate_config)
+    # ... test code
+```
+
+**Rate limiting tests** should explicitly enable it with **minimal delays**:
+
+```python
+def test_rate_limiting_behavior():
+    # ONLY tests that verify rate limiting behavior should enable it
+    # Use the SMALLEST delay values possible (50-150ms range recommended)
+    rate_config = RateLimitConfig(
+        base_delay=(0.05, 0.1),  # Minimal delay for fast testing
+        min_delay=(0.01, 0.03),   # Even smaller for large pools
+        disable_delay=False
+    )
+    client = WeiboClient(rate_limit_config=rate_config)
+    # ... verify rate limiting works
+```
+
+**Important**: Even when testing rate limiting functionality, use the smallest possible delay values (typically 50-150ms) to keep tests fast. The goal is to verify the rate limiting logic works, not to simulate production delay values.
+
+### Pytest Fixtures
+
+The `tests/unit/conftest.py` provides helpful fixtures:
+
+- `client_no_rate_limit` - WeiboClient with rate limiting disabled (use this for most unit tests)
+- `client_no_rate_limit_with_proxy` - Client with both rate limiting disabled and proxy configured
+- `mock_cookie_fetcher` - Mocked CookieFetcher for testing cookie handling
+
+### Proxy Testing
+
+When testing proxy parsers:
   - Test both single and batch proxy responses
   - Verify pool size limits are respected
   - Test custom parser returns `List[str]`

@@ -197,8 +197,8 @@ class TestRateLimitDecorator:
             def __init__(self, pool_size):
                 self.pool_size = pool_size
                 self.rate_limit = RateLimitConfig(
-                    base_delay=(0.2, 0.25),
-                    min_delay=(0.05, 0.08),
+                    base_delay=(0.1, 0.12),  # Minimal delay for fast test
+                    min_delay=(0.02, 0.03),
                     pool_size_threshold=10,
                 )
                 self.logger = MagicMock()
@@ -364,7 +364,9 @@ class TestWeiboClientRateLimiting:
         )
 
         config = RateLimitConfig(
-            base_delay=(0.2, 0.25), min_delay=(0.05, 0.08), pool_size_threshold=10
+            base_delay=(0.1, 0.12),  # Minimal delay for fast test
+            min_delay=(0.02, 0.03),
+            pool_size_threshold=10,
         )
         client = WeiboClient(
             proxy_api_url="http://proxy.api/get",
@@ -381,7 +383,7 @@ class TestWeiboClientRateLimiting:
         elapsed = time.time() - start_time
 
         # Delay should be interpolated between base and min based on pool size
-        assert elapsed >= 0.05
+        assert elapsed >= 0.02
 
 
 @pytest.mark.unit
