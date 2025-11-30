@@ -501,7 +501,9 @@ class WeiboClient:
         posts_data, pagination = self.parser.parse_posts(data)
         posts = [Post.from_dict(post_data) for post_data in posts_data]
 
-        self.logger.info(f"Found {len(posts)} posts (has_more: {pagination.get('has_more', False)})")
+        self.logger.info(
+            f"Found {len(posts)} posts (has_more: {pagination.get('has_more', False)})"
+        )
         return posts, pagination
 
     def search_posts_by_count(
@@ -532,7 +534,9 @@ class WeiboClient:
 
         while len(all_posts) < count and page <= max_pages:
             try:
-                posts, pagination = self.search_posts(query, page=page, use_proxy=use_proxy)
+                posts, pagination = self.search_posts(
+                    query, page=page, use_proxy=use_proxy
+                )
 
                 if not posts:
                     self.logger.info(
@@ -552,7 +556,7 @@ class WeiboClient:
                 # Check if there are more pages using pagination info
                 if not pagination.get("has_more", False):
                     self.logger.info(
-                        f"Reached last page (cardlistInfo.page is None), stopping"
+                        "Reached last page (cardlistInfo.page is None), stopping"
                     )
                     break
 
@@ -600,7 +604,9 @@ class WeiboClient:
                 break
 
             try:
-                posts, pagination = self.search_posts(query, page=page, use_proxy=use_proxy)
+                posts, pagination = self.search_posts(
+                    query, page=page, use_proxy=use_proxy
+                )
 
                 if not posts:
                     self.logger.info(
@@ -610,14 +616,13 @@ class WeiboClient:
 
                 all_posts.extend(posts)
                 self.logger.info(
-                    f"Page {page}: fetched {len(posts)} posts, "
-                    f"total: {len(all_posts)}"
+                    f"Page {page}: fetched {len(posts)} posts, total: {len(all_posts)}"
                 )
 
                 # Check if there are more pages using pagination info
                 if not pagination.get("has_more", False):
                     self.logger.info(
-                        f"Reached last page (cardlistInfo.page is None), stopping"
+                        "Reached last page (cardlistInfo.page is None), stopping"
                     )
                     break
 
