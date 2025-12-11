@@ -45,7 +45,7 @@ class Post:
             Post: Parsed post model
         """
         from .comment import Comment
-        
+
         retweeted_status = None
         if data.get("retweeted_status"):
             retweeted_status = cls.from_dict(data["retweeted_status"])
