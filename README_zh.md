@@ -1,6 +1,6 @@
 # Crawl4Weibo
 
-[![每日可用性](https://github.com/Kritoooo/crawl4weibo/actions/workflows/availability.yml/badge.svg)](https://github.com/Kritoooo/crawl4weibo/actions/workflows/availability.yml)
+[![每日可用性](https://github.com/Praeviso/crawl4weibo/actions/workflows/availability.yml/badge.svg)](https://github.com/Praeviso/crawl4weibo/actions/workflows/availability.yml)
 
 **中文** | **[English](README.md)**
 
