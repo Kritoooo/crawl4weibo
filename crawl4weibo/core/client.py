@@ -21,6 +21,7 @@ from ..utils.logger import setup_logger
 from ..utils.parser import WeiboParser
 from ..utils.proxy import ProxyPool, ProxyPoolConfig
 from ..utils.rate_limit import RateLimitConfig, rate_limit
+from ..utils.user_filters import filter_users
 
 
 class WeiboClient:
@@ -475,7 +476,18 @@ class WeiboClient:
 
     @rate_limit()
     def search_users(
-        self, query: str, page: int = 1, count: int = 10, use_proxy: bool = True
+        self,
+        query: str,
+        page: int = 1,
+        count: int = 10,
+        use_proxy: bool = True,
+        *,
+        gender: Optional[str] = None,
+        location: Optional[str] = None,
+        birthday: Optional[str] = None,
+        age_range: Optional[tuple[Optional[int], Optional[int]]] = None,
+        education: Optional[str] = None,
+        company: Optional[str] = None,
     ) -> list[User]:
         """
         Search for users
@@ -485,9 +497,18 @@ class WeiboClient:
             page: Page number
             count: Number of results per page
             use_proxy: Whether to use proxy, default True
+            gender: Filter by gender (e.g., "m", "f", "male", "female")
+            location: Filter by location (substring match)
+            birthday: Filter by birthday (substring match)
+            age_range: Filter by age range (min_age, max_age)
+            education: Filter by education (substring match)
+            company: Filter by company (substring match)
 
         Returns:
             List of User objects
+
+        Note:
+            Filters are applied locally based on fields returned by the search API.
         """
         url = "https://m.weibo.cn/api/container/getIndex"
         params = {
@@ -509,7 +530,32 @@ class WeiboClient:
                         if user_data:
                             users.append(User.from_dict(user_data))
 
-        self.logger.info(f"Found {len(users)} users")
+        total_users = len(users)
+        filters_present = any(
+            [
+                gender,
+                location,
+                birthday,
+                age_range,
+                education,
+                company,
+            ]
+        )
+
+        if filters_present:
+            users = filter_users(
+                users,
+                gender=gender,
+                location=location,
+                birthday=birthday,
+                age_range=age_range,
+                education=education,
+                company=company,
+            )
+            self.logger.info(f"Found {total_users} users, {len(users)} after filtering")
+        else:
+            self.logger.info(f"Found {total_users} users")
+
         return users
 
     @rate_limit()
