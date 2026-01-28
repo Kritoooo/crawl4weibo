@@ -100,9 +100,7 @@ class WeiboClient:
             use_browser_cookies = True
 
         if login_cookies and cookie_storage_path is None:
-            cookie_storage_path = (
-                Path.home() / ".crawl4weibo" / "weibo_storage_state.json"
-            )
+            cookie_storage_path = "~/.crawl4weibo/weibo_storage_state.json"
 
         self.cookie_storage_path = (
             Path(cookie_storage_path).expanduser()

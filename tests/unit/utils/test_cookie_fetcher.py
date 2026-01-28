@@ -5,7 +5,7 @@ Unit tests for cookie_fetcher module
 """
 
 import asyncio
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import responses
@@ -43,6 +43,123 @@ class TestCookieFetcher:
         fetcher = CookieFetcher(use_browser=False, require_login=True)
         with pytest.raises(ValueError):
             fetcher.fetch_cookies()
+
+
+class TestLoginFlow:
+    """Test login flow helpers"""
+
+    def test_wait_for_login_sync_success(self):
+        """Test sync login wait succeeds when cookie appears"""
+        fetcher = CookieFetcher(use_browser=True, require_login=True)
+        context = Mock()
+        context.cookies.side_effect = [
+            [],
+            [{"name": "SUB", "value": "token"}],
+        ]
+
+        with patch(
+            "crawl4weibo.utils.cookie_fetcher.time.time",
+            side_effect=[0, 0.1, 0.2],
+        ), patch("crawl4weibo.utils.cookie_fetcher.time.sleep"):
+            fetcher._wait_for_login_sync(context, timeout=1)
+
+        assert context.cookies.call_count == 2
+
+    def test_wait_for_login_sync_timeout(self):
+        """Test sync login wait raises on timeout"""
+        fetcher = CookieFetcher(use_browser=True, require_login=True)
+        context = Mock()
+        context.cookies.return_value = []
+
+        with patch(
+            "crawl4weibo.utils.cookie_fetcher.time.time", side_effect=[0, 0]
+        ):
+            with pytest.raises(TimeoutError):
+                fetcher._wait_for_login_sync(context, timeout=0)
+
+    def test_ensure_login_sync_uses_storage_state(self, tmp_path):
+        """Test sync login uses storage state when already logged in"""
+        storage_path = tmp_path / "state.json"
+        storage_path.write_text("{}", encoding="utf-8")
+        fetcher = CookieFetcher(
+            use_browser=True, require_login=True, storage_state_path=storage_path
+        )
+        page = Mock()
+        context = Mock()
+        context.cookies.return_value = [{"name": "SUB", "value": "token"}]
+
+        with patch("crawl4weibo.utils.cookie_fetcher.time.sleep"):
+            fetcher._ensure_login_sync(page, context, timeout=1)
+
+        page.goto.assert_called_once()
+        assert page.goto.call_args.args[0] == "https://m.weibo.cn/"
+
+    def test_ensure_login_sync_falls_back_to_login(self):
+        """Test sync login falls back to login page when no state"""
+        fetcher = CookieFetcher(use_browser=True, require_login=True)
+        page = Mock()
+        context = Mock()
+        login_url = "https://passport.weibo.cn/signin/login?entry=mweibo"
+        mobile_url = "https://m.weibo.cn/"
+
+        with patch.object(fetcher, "_wait_for_login_sync") as wait_mock:
+            fetcher._ensure_login_sync(page, context, timeout=1)
+
+        calls = page.goto.call_args_list
+        assert calls[0].args[0] == login_url
+        assert calls[1].args[0] == mobile_url
+        wait_mock.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_wait_for_login_async_success(self):
+        """Test async login wait succeeds when cookie appears"""
+        fetcher = CookieFetcher(use_browser=True, require_login=True)
+        context = Mock()
+        context.cookies = AsyncMock(
+            side_effect=[[], [{"name": "SUB", "value": "token"}]]
+        )
+
+        with patch(
+            "crawl4weibo.utils.cookie_fetcher.time.time",
+            side_effect=[0, 0.1, 0.2],
+        ), patch("crawl4weibo.utils.cookie_fetcher.asyncio.sleep", new=AsyncMock()):
+            await fetcher._wait_for_login_async(context, timeout=1)
+
+        assert context.cookies.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_wait_for_login_async_timeout(self):
+        """Test async login wait raises on timeout"""
+        fetcher = CookieFetcher(use_browser=True, require_login=True)
+        context = Mock()
+        context.cookies = AsyncMock(return_value=[])
+
+        with patch(
+            "crawl4weibo.utils.cookie_fetcher.time.time", side_effect=[0, 0]
+        ):
+            with pytest.raises(TimeoutError):
+                await fetcher._wait_for_login_async(context, timeout=0)
+
+    @pytest.mark.asyncio
+    async def test_ensure_login_async_uses_storage_state(self, tmp_path):
+        """Test async login uses storage state when already logged in"""
+        storage_path = tmp_path / "state.json"
+        storage_path.write_text("{}", encoding="utf-8")
+        fetcher = CookieFetcher(
+            use_browser=True, require_login=True, storage_state_path=storage_path
+        )
+        page = Mock()
+        page.goto = AsyncMock()
+        context = Mock()
+        context.cookies = AsyncMock(return_value=[{"name": "SUB", "value": "token"}])
+
+        with patch(
+            "crawl4weibo.utils.cookie_fetcher.asyncio.sleep", new=AsyncMock()
+        ):
+            await fetcher._ensure_login_async(page, context, timeout=1)
+
+        page.goto.assert_awaited_once()
+        assert page.goto.call_args.args[0] == "https://m.weibo.cn/"
 
     @responses.activate
     def test_fetch_with_requests_success(self):

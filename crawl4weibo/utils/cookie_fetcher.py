@@ -6,6 +6,7 @@ Supports both simple requests-based and browser-based cookie acquisition
 """
 
 import asyncio
+import contextlib
 import random
 import time
 from pathlib import Path
@@ -157,12 +158,21 @@ class CookieFetcher:
             return
         self.storage_state_path.parent.mkdir(parents=True, exist_ok=True)
         context.storage_state(path=str(self.storage_state_path))
+        self._secure_storage_state_file()
 
     async def _persist_storage_state_async(self, context) -> None:
         if not self.storage_state_path:
             return
         self.storage_state_path.parent.mkdir(parents=True, exist_ok=True)
         await context.storage_state(path=str(self.storage_state_path))
+        self._secure_storage_state_file()
+
+    def _secure_storage_state_file(self) -> None:
+        if not self.storage_state_path:
+            return
+        # Best-effort permission hardening; ignore if unsupported.
+        with contextlib.suppress(OSError):
+            self.storage_state_path.chmod(0o600)
 
     def _wait_for_login_sync(self, context, timeout: int) -> None:
         deadline = time.time() + timeout
@@ -320,7 +330,8 @@ class CookieFetcher:
                 for cookie in cookies:
                     cookies_dict[cookie["name"]] = cookie["value"]
 
-                self._persist_storage_state_sync(context)
+                if self.require_login and _has_login_cookie(cookies):
+                    self._persist_storage_state_sync(context)
             finally:
                 context.close()
                 browser.close()
@@ -411,7 +422,8 @@ class CookieFetcher:
                 for cookie in cookies:
                     cookies_dict[cookie["name"]] = cookie["value"]
 
-                await self._persist_storage_state_async(context)
+                if self.require_login and _has_login_cookie(cookies):
+                    await self._persist_storage_state_async(context)
             finally:
                 await context.close()
                 await browser.close()
