@@ -38,6 +38,12 @@ class TestCookieFetcher:
         fetcher = CookieFetcher(use_browser=True)
         assert fetcher.use_browser is True
 
+    def test_require_login_requires_browser(self):
+        """Test require_login requires browser mode"""
+        fetcher = CookieFetcher(use_browser=False, require_login=True)
+        with pytest.raises(ValueError):
+            fetcher.fetch_cookies()
+
     @responses.activate
     def test_fetch_with_requests_success(self):
         """Test successful cookie fetching with requests"""

@@ -49,6 +49,22 @@ class TestClientCookieInitialization:
         assert call_kwargs["use_browser"] is False
 
     @patch("crawl4weibo.core.client.CookieFetcher")
+    def test_login_cookies_enable_headful_browser(self, mock_fetcher_class, tmp_path):
+        """Test login cookies enable headful browser when no stored state"""
+        mock_fetcher = MagicMock()
+        mock_fetcher.fetch_cookies.return_value = {"test": "cookie"}
+        mock_fetcher_class.return_value = mock_fetcher
+
+        storage_path = tmp_path / "state.json"
+        WeiboClient(login_cookies=True, cookie_storage_path=storage_path)
+
+        call_kwargs = mock_fetcher_class.call_args.kwargs
+        assert call_kwargs["use_browser"] is True
+        assert call_kwargs["require_login"] is True
+        assert call_kwargs["headless"] is False
+        assert call_kwargs["storage_state_path"] == storage_path
+
+    @patch("crawl4weibo.core.client.CookieFetcher")
     def test_provided_cookies_skip_fetch(self, mock_fetcher_class):
         """Test that providing cookies skips fetching"""
         mock_fetcher = MagicMock()
