@@ -6,6 +6,9 @@ on:
     - cron: "30 2 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: daily-availability
   cancel-in-progress: true
