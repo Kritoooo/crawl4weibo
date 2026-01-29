@@ -11,6 +11,7 @@ Crawl4Weibo is a ready-to-use Weibo (微博) web scraper Python library that sim
 ## ✨ Features
 - **No Cookie Required**: Runs without cookies, automatically initializes session with mobile User-Agent
 - **Browser-Based Cookie Fetching**: Uses Playwright to simulate real browsers for enhanced anti-scraping bypass
+- **Optional Logged-In Cookies**: Interactive login and persisted storage state for more complete data
 - **Built-in 432 Protection**: Handles anti-scraping protection with exponential backoff retry mechanism
 - **Unified Proxy Pool Management**: Supports both dynamic and static IP proxy pools with configurable TTL, polling strategies, and automatic cleanup
 - **Standardized Data Models**: Clean `User`, `Post`, and `Comment` data models with recursive access to reposted content
@@ -78,6 +79,29 @@ if results:
         print(f"{comment.user_screen_name}: {comment.text[:50]}...")
 ```
 For more examples, see [`examples/simple_example.py`](examples/simple_example.py).
+
+## Logged-In Cookies (Optional)
+Some endpoints return more complete data when using logged-in cookies. You can
+enable interactive login and persist the browser storage state for reuse:
+
+```python
+from crawl4weibo import WeiboClient
+
+client = WeiboClient(
+    login_cookies=True,
+    cookie_storage_path="~/.crawl4weibo/weibo_storage_state.json",
+    browser_headless=False,
+    login_timeout=180,
+)
+```
+
+Notes:
+- The first run opens a browser window for manual login. Subsequent runs can
+  reuse the saved storage state.
+- After the first login, you can set `browser_headless=True` to run without UI.
+- If `cookie_storage_path` is omitted, it defaults to
+  `~/.crawl4weibo/weibo_storage_state.json` when `login_cookies=True`.
+- Keep the storage file secure; it contains authenticated session data.
 
 **Run the example:**
 ```bash

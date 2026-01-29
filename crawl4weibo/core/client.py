@@ -37,6 +37,10 @@ class WeiboClient:
         rate_limit_config: Optional[RateLimitConfig] = None,
         use_browser_cookies: bool = True,
         auto_fetch_cookies: bool = True,
+        login_cookies: bool = False,
+        cookie_storage_path: Optional[Union[str, Path]] = None,
+        browser_headless: bool = True,
+        login_timeout: int = 120,
     ):
         """
         Initialize Weibo client
@@ -60,6 +64,12 @@ class WeiboClient:
             auto_fetch_cookies: If True and cookies parameter is not provided,
                 automatically fetches cookies during initialization.
                 Default: True
+            login_cookies: If True, waits for logged-in cookies via Playwright
+                browser automation (headful when needed). Default: False
+            cookie_storage_path: Optional path to persist Playwright storage state
+                for reusing logged-in cookies across runs.
+            browser_headless: Whether to run Playwright in headless mode.
+            login_timeout: Timeout for manual login in seconds.
         """
         self.logger = setup_logger(
             level=getattr(__import__("logging"), log_level.upper()), log_file=log_file
@@ -82,12 +92,49 @@ class WeiboClient:
             }
         )
 
+        if login_cookies and not use_browser_cookies:
+            self.logger.info(
+                "login_cookies requires browser cookies. "
+                "Enabling browser-based cookie fetching."
+            )
+            use_browser_cookies = True
+
+        if login_cookies and cookie_storage_path is None:
+            cookie_storage_path = "~/.crawl4weibo/weibo_storage_state.json"
+
+        self.cookie_storage_path = (
+            Path(cookie_storage_path).expanduser()
+            if cookie_storage_path is not None
+            else None
+        )
+        self.browser_headless = browser_headless
+        self.login_timeout = login_timeout
+        self.login_cookies = login_cookies
+        self.use_browser_cookies = use_browser_cookies
+
+        if (
+            self.login_cookies
+            and self.browser_headless
+            and not (self.cookie_storage_path and self.cookie_storage_path.exists())
+        ):
+            self.logger.info(
+                "login_cookies enabled without stored state; "
+                "forcing browser_headless=False for manual login."
+            )
+            self.browser_headless = False
+
         # Handle cookies
         if cookies:
             self._set_cookies(cookies)
             self.logger.info("Using provided cookies")
         elif auto_fetch_cookies:
-            self._init_session(use_browser=use_browser_cookies)
+            self._init_session(
+                use_browser=use_browser_cookies,
+                require_login=self.login_cookies,
+                browser_headless=self.browser_headless,
+                login_timeout=self.login_timeout,
+                storage_state_path=self.cookie_storage_path,
+            )
         else:
             self.logger.info("Skipping cookie initialization")
 
@@ -129,19 +176,71 @@ class WeiboClient:
         elif isinstance(cookies, dict):
             self.session.cookies.update(cookies)
 
-    def _init_session(self, use_browser: bool = False):
+    def _init_session(
+        self,
+        use_browser: bool = False,
+        require_login: bool = False,
+        browser_headless: bool = True,
+        login_timeout: int = 120,
+        storage_state_path: Optional[Union[str, Path]] = None,
+    ):
         """
         Initialize session and fetch cookies
 
         Args:
             use_browser: If True, uses Playwright browser automation.
                 If False, uses simple requests method.
+            require_login: If True, waits for logged-in cookies to appear.
+            browser_headless: Whether to run Playwright in headless mode.
+            login_timeout: Timeout for manual login in seconds.
+            storage_state_path: Optional path to persist Playwright storage state.
         """
         try:
+            if require_login and not use_browser:
+                self.logger.info(
+                    "require_login=True requires browser cookies. "
+                    "Forcing use_browser=True."
+                )
+                use_browser = True
+
+            storage_state = (
+                Path(storage_state_path).expanduser()
+                if storage_state_path is not None
+                else None
+            )
+
+            if (
+                require_login
+                and browser_headless
+                and not (storage_state and storage_state.exists())
+            ):
+                self.logger.info(
+                    "require_login enabled without stored state; "
+                    "forcing browser_headless=False for manual login."
+                )
+                browser_headless = False
+
             method = "browser" if use_browser else "requests"
             self.logger.debug(f"Initializing session with {method} method...")
 
-            fetcher = CookieFetcher(user_agent=self.user_agent, use_browser=use_browser)
+            if require_login:
+                self.logger.info(
+                    "Login cookies enabled. "
+                    f"Please complete login within {login_timeout} seconds."
+                )
+                if storage_state:
+                    self.logger.info(f"Cookie storage: {storage_state}")
+                    if storage_state.exists():
+                        self.logger.info("Using existing login storage state.")
+
+            fetcher = CookieFetcher(
+                user_agent=self.user_agent,
+                use_browser=use_browser,
+                require_login=require_login,
+                login_timeout=login_timeout,
+                headless=browser_headless,
+                storage_state_path=storage_state,
+            )
             cookies = fetcher.fetch_cookies()
 
             if cookies:
@@ -309,18 +408,37 @@ class WeiboClient:
 
         raise CrawlError("Maximum retry attempts reached")
 
-    def refresh_cookies(self, use_browser: bool = False):
+    def refresh_cookies(
+        self,
+        use_browser: bool = False,
+        login_cookies: bool = False,
+        cookie_storage_path: Optional[Union[str, Path]] = None,
+        browser_headless: bool = True,
+        login_timeout: int = 120,
+    ):
         """
         Manually refresh cookies
 
         Args:
             use_browser: If True, uses Playwright browser automation.
                 If False, uses simple requests method.
+            login_cookies: If True, waits for logged-in cookies to appear.
+            cookie_storage_path: Optional path to persist Playwright storage state.
+            browser_headless: Whether to run Playwright in headless mode.
+            login_timeout: Timeout for manual login in seconds.
 
         Raises:
             ImportError: If use_browser=True but playwright is not installed
         """
-        self._init_session(use_browser=use_browser)
+        if login_cookies and cookie_storage_path is None:
+            cookie_storage_path = self.cookie_storage_path
+        self._init_session(
+            use_browser=use_browser,
+            require_login=login_cookies,
+            browser_headless=browser_headless,
+            login_timeout=login_timeout,
+            storage_state_path=cookie_storage_path,
+        )
 
     def add_proxy(self, proxy_url: str, ttl: Optional[int] = None):
         """

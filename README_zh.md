@@ -11,6 +11,7 @@ Crawl4Weibo 是一个开箱即用的微博爬虫 Python 库，模拟移动端请
 ## ✨ 特性
 - **无需 Cookie 即可运行**：自动初始化 session 和移动端 UA
 - **支持浏览器自动化获取 Cookie**：使用 Playwright 模拟真实浏览器,应对加强的反爬策略
+- **支持登录态 Cookie**：可交互登录并持久化存储,获取更完整数据
 - **内置 432 防护处理**：指数退避重试，减少请求失败
 - **支持动态和静态IP代理池统一管理**：可配置过期时间，支持轮询和自动清理
 - **标准化的数据模型**：`User`、`Post` 与 `Comment` 数据模型，可递归访问转发内容
@@ -78,6 +79,27 @@ if results:
         print(f"{comment.user_screen_name}: {comment.text[:50]}...")
 ```
 更多示例请参考 [`examples/simple_example.py`](examples/simple_example.py)。
+
+## 登录态 Cookie（可选）
+部分接口在登录状态下返回更完整的数据。可启用交互式登录并持久化浏览器存储：
+
+```python
+from crawl4weibo import WeiboClient
+
+client = WeiboClient(
+    login_cookies=True,
+    cookie_storage_path="~/.crawl4weibo/weibo_storage_state.json",
+    browser_headless=False,
+    login_timeout=180,
+)
+```
+
+说明：
+- 第一次运行会打开浏览器窗口供手动登录，后续可复用保存的存储状态。
+- 首次登录后可将 `browser_headless=True` 以无界面运行。
+- 若不指定 `cookie_storage_path`，当 `login_cookies=True` 时默认使用
+  `~/.crawl4weibo/weibo_storage_state.json`。
+- 请妥善保管该文件，其中包含登录会话信息。
 
 **运行示例：**
 ```bash

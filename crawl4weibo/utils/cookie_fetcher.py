@@ -6,11 +6,17 @@ Supports both simple requests-based and browser-based cookie acquisition
 """
 
 import asyncio
+import contextlib
 import random
 import time
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Union
 
 import requests
+
+LOGIN_URL = "https://passport.weibo.cn/signin/login?entry=mweibo"
+MOBILE_URL = "https://m.weibo.cn/"
+LOGIN_COOKIE_NAMES = {"SUB", "SUBP", "SSOLoginState"}
 
 
 def _is_event_loop_running() -> bool:
@@ -22,10 +28,23 @@ def _is_event_loop_running() -> bool:
         return False
 
 
+def _has_login_cookie(cookies: list[dict[str, str]]) -> bool:
+    """Check if any cookie indicates an authenticated Weibo session"""
+    return any(cookie.get("name") in LOGIN_COOKIE_NAMES for cookie in cookies)
+
+
 class CookieFetcher:
     """Cookie fetcher for Weibo"""
 
-    def __init__(self, user_agent: Optional[str] = None, use_browser: bool = False):
+    def __init__(
+        self,
+        user_agent: Optional[str] = None,
+        use_browser: bool = False,
+        require_login: bool = False,
+        login_timeout: int = 120,
+        headless: bool = True,
+        storage_state_path: Optional[Union[str, Path]] = None,
+    ):
         """
         Initialize cookie fetcher
 
@@ -33,6 +52,10 @@ class CookieFetcher:
             user_agent: User-Agent string
             use_browser: Whether to use browser automation (Playwright)
                 If True, requires playwright to be installed
+            require_login: If True, waits for logged-in cookies to appear
+            login_timeout: Timeout for manual login in seconds
+            headless: Whether to run the browser in headless mode
+            storage_state_path: Optional path to persist Playwright storage state
         """
         self.user_agent = user_agent or (
             "Mozilla/5.0 (Linux; Android 13; SM-G9980) "
@@ -40,6 +63,14 @@ class CookieFetcher:
             "Chrome/112.0.5615.135 Mobile Safari/537.36"
         )
         self.use_browser = use_browser
+        self.require_login = require_login
+        self.login_timeout = login_timeout
+        self.headless = headless
+        self.storage_state_path = (
+            Path(storage_state_path).expanduser()
+            if storage_state_path is not None
+            else None
+        )
 
     def fetch_cookies(self, timeout: int = 30) -> dict[str, str]:
         """
@@ -55,6 +86,8 @@ class CookieFetcher:
             ImportError: If use_browser=True but playwright is not installed
             Exception: If cookie fetching fails
         """
+        if self.require_login and not self.use_browser:
+            raise ValueError("require_login=True requires use_browser=True")
         if self.use_browser:
             return self._fetch_with_browser(timeout)
         else:
@@ -82,7 +115,7 @@ class CookieFetcher:
         )
 
         try:
-            response = session.get("https://m.weibo.cn/", timeout=timeout)
+            response = session.get(MOBILE_URL, timeout=timeout)
             time.sleep(random.uniform(1, 2))
 
             if response.status_code == 200:
@@ -113,6 +146,106 @@ class CookieFetcher:
             # Use sync API
             return self._fetch_with_browser_sync(timeout)
 
+    def _resolve_storage_state_path(self) -> Optional[str]:
+        if not self.storage_state_path:
+            return None
+        if self.storage_state_path.exists():
+            return str(self.storage_state_path)
+        return None
+
+    def _persist_storage_state_sync(self, context) -> None:
+        if not self.storage_state_path:
+            return
+        self.storage_state_path.parent.mkdir(parents=True, exist_ok=True)
+        context.storage_state(path=str(self.storage_state_path))
+        self._secure_storage_state_file()
+
+    async def _persist_storage_state_async(self, context) -> None:
+        if not self.storage_state_path:
+            return
+        self.storage_state_path.parent.mkdir(parents=True, exist_ok=True)
+        await context.storage_state(path=str(self.storage_state_path))
+        self._secure_storage_state_file()
+
+    def _secure_storage_state_file(self) -> None:
+        if not self.storage_state_path:
+            return
+        # Best-effort permission hardening; ignore if unsupported.
+        with contextlib.suppress(OSError):
+            self.storage_state_path.chmod(0o600)
+
+    def _wait_for_login_sync(self, context, timeout: int) -> None:
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            cookies = context.cookies()
+            if _has_login_cookie(cookies):
+                return
+            time.sleep(1)
+        raise TimeoutError(
+            f"Login cookies not detected within {timeout} seconds. "
+            "Please complete login in the browser window."
+        )
+
+    async def _wait_for_login_async(self, context, timeout: int) -> None:
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            cookies = await context.cookies()
+            if _has_login_cookie(cookies):
+                return
+            await asyncio.sleep(1)
+        raise TimeoutError(
+            f"Login cookies not detected within {timeout} seconds. "
+            "Please complete login in the browser window."
+        )
+
+    def _ensure_login_sync(self, page, context, timeout: int) -> None:
+        storage_state = self._resolve_storage_state_path()
+        if storage_state:
+            page.goto(
+                MOBILE_URL,
+                timeout=timeout * 1000,
+                wait_until="domcontentloaded",
+            )
+            time.sleep(random.uniform(1, 2))
+            if _has_login_cookie(context.cookies()):
+                return
+
+        page.goto(
+            LOGIN_URL,
+            timeout=timeout * 1000,
+            wait_until="domcontentloaded",
+        )
+        self._wait_for_login_sync(context, self.login_timeout)
+        page.goto(
+            MOBILE_URL,
+            timeout=timeout * 1000,
+            wait_until="networkidle",
+        )
+
+    async def _ensure_login_async(self, page, context, timeout: int) -> None:
+        storage_state = self._resolve_storage_state_path()
+        if storage_state:
+            await page.goto(
+                MOBILE_URL,
+                timeout=timeout * 1000,
+                wait_until="domcontentloaded",
+            )
+            await asyncio.sleep(random.uniform(1, 2))
+            if _has_login_cookie(await context.cookies()):
+                return
+
+        await page.goto(
+            LOGIN_URL,
+            timeout=timeout * 1000,
+            wait_until="domcontentloaded",
+        )
+        await self._wait_for_login_async(context, self.login_timeout)
+        await page.goto(
+            MOBILE_URL,
+            timeout=timeout * 1000,
+            wait_until="networkidle",
+        )
+
     def _fetch_with_browser_sync(self, timeout: int = 30) -> dict[str, str]:
         """
         Fetch cookies using synchronous Playwright API
@@ -139,7 +272,7 @@ class CookieFetcher:
 
         with sync_playwright() as p:
             browser = p.chromium.launch(
-                headless=True,
+                headless=self.headless,
                 args=[
                     "--disable-blink-features=AutomationControlled",
                     "--no-sandbox",
@@ -155,6 +288,7 @@ class CookieFetcher:
                 device_scale_factor=2.75,
                 is_mobile=True,
                 has_touch=True,
+                storage_state=self._resolve_storage_state_path(),
             )
 
             # Add extra headers
@@ -171,12 +305,15 @@ class CookieFetcher:
             page = context.new_page()
 
             try:
-                # Navigate to Weibo mobile homepage
-                page.goto(
-                    "https://m.weibo.cn/",
-                    timeout=timeout * 1000,
-                    wait_until="networkidle",
-                )
+                # Navigate to Weibo mobile homepage or login flow
+                if self.require_login:
+                    self._ensure_login_sync(page, context, timeout)
+                else:
+                    page.goto(
+                        MOBILE_URL,
+                        timeout=timeout * 1000,
+                        wait_until="networkidle",
+                    )
 
                 # Wait a bit for JavaScript to execute and cookies to be set
                 time.sleep(random.uniform(2, 4))
@@ -193,6 +330,8 @@ class CookieFetcher:
                 for cookie in cookies:
                     cookies_dict[cookie["name"]] = cookie["value"]
 
+                if self.require_login and _has_login_cookie(cookies):
+                    self._persist_storage_state_sync(context)
             finally:
                 context.close()
                 browser.close()
@@ -225,7 +364,7 @@ class CookieFetcher:
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(
-                headless=True,
+                headless=self.headless,
                 args=[
                     "--disable-blink-features=AutomationControlled",
                     "--no-sandbox",
@@ -241,6 +380,7 @@ class CookieFetcher:
                 device_scale_factor=2.75,
                 is_mobile=True,
                 has_touch=True,
+                storage_state=self._resolve_storage_state_path(),
             )
 
             # Add extra headers
@@ -257,12 +397,15 @@ class CookieFetcher:
             page = await context.new_page()
 
             try:
-                # Navigate to Weibo mobile homepage
-                await page.goto(
-                    "https://m.weibo.cn/",
-                    timeout=timeout * 1000,
-                    wait_until="networkidle",
-                )
+                # Navigate to Weibo mobile homepage or login flow
+                if self.require_login:
+                    await self._ensure_login_async(page, context, timeout)
+                else:
+                    await page.goto(
+                        MOBILE_URL,
+                        timeout=timeout * 1000,
+                        wait_until="networkidle",
+                    )
 
                 # Wait a bit for JavaScript to execute and cookies to be set
                 await asyncio.sleep(random.uniform(2, 4))
@@ -279,6 +422,8 @@ class CookieFetcher:
                 for cookie in cookies:
                     cookies_dict[cookie["name"]] = cookie["value"]
 
+                if self.require_login and _has_login_cookie(cookies):
+                    await self._persist_storage_state_async(context)
             finally:
                 await context.close()
                 await browser.close()
@@ -320,7 +465,12 @@ def fetch_cookies_simple(user_agent: Optional[str] = None) -> dict[str, str]:
 
 
 def fetch_cookies_browser(
-    user_agent: Optional[str] = None, timeout: int = 30
+    user_agent: Optional[str] = None,
+    timeout: int = 30,
+    require_login: bool = False,
+    login_timeout: int = 120,
+    headless: bool = True,
+    storage_state_path: Optional[Union[str, Path]] = None,
 ) -> dict[str, str]:
     """
     Convenience function to fetch cookies using browser automation
@@ -328,6 +478,10 @@ def fetch_cookies_browser(
     Args:
         user_agent: Optional User-Agent string
         timeout: Timeout in seconds
+        require_login: If True, waits for logged-in cookies to appear
+        login_timeout: Timeout for manual login in seconds
+        headless: Whether to run the browser in headless mode
+        storage_state_path: Optional path to persist Playwright storage state
 
     Returns:
         Dictionary of cookies
@@ -335,5 +489,12 @@ def fetch_cookies_browser(
     Raises:
         ImportError: If playwright is not installed
     """
-    fetcher = CookieFetcher(user_agent=user_agent, use_browser=True)
+    fetcher = CookieFetcher(
+        user_agent=user_agent,
+        use_browser=True,
+        require_login=require_login,
+        login_timeout=login_timeout,
+        headless=headless,
+        storage_state_path=storage_state_path,
+    )
     return fetcher.fetch_cookies(timeout=timeout)
