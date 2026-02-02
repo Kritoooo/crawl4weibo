@@ -55,11 +55,32 @@ class TestUser:
         assert user.avatar_url == "http://avatar.example"
         assert user.cover_image_url == "http://cover.example"
         assert user.location == "Shanghai"
+        assert user.ip_location == "Shanghai"
         assert user.birthday == "1995-02-03"
         assert user.education == "Test University"
         assert user.company == "Test Co"
         assert user.registration_time == "2020-01-01"
         assert user.sunshine_credit == "A"
+
+    def test_user_from_dict_detail_fields(self):
+        """Test User creation from profile detail fields"""
+        data = {
+            "id": "123456",
+            "screen_name": "DetailUser",
+            "real_auth": True,
+            "desc_text": "Original singer",
+            "label_desc": [{"name": "Test label"}],
+            "verified_url": "https://verified.weibo.com/verify",
+            "cnt_desc": "访问量 16万+",
+            "friend_info": "他有 791 个好友",
+        }
+        user = User.from_dict(data)
+        assert user.real_auth is True
+        assert user.desc_text == "Original singer"
+        assert user.label_desc == ["Test label"]
+        assert user.verified_url == "https://verified.weibo.com/verify"
+        assert user.cnt_desc == "访问量 16万+"
+        assert user.friend_info == "他有 791 个好友"
 
     def test_user_to_dict(self):
         """Test User to dictionary conversion"""

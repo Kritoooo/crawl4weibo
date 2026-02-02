@@ -30,6 +30,13 @@ class User:
     company: str = ""
     registration_time: Optional[datetime] = None
     sunshine_credit: str = ""
+    ip_location: str = ""
+    real_auth: bool = False
+    desc_text: str = ""
+    label_desc: list[str] = field(default_factory=list)
+    verified_url: str = ""
+    cnt_desc: str = ""
+    friend_info: str = ""
     raw_data: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
@@ -66,6 +73,7 @@ class User:
             "id": str(data.get("id", "")),
             "screen_name": data.get("screen_name", ""),
             "gender": data.get("gender", ""),
+            "ip_location": _coalesce_str(data.get("ip_location"), data.get("ip")),
             "location": _coalesce_str(
                 data.get("location"),
                 data.get("ip_location"),
@@ -92,9 +100,30 @@ class User:
             "sunshine_credit": _coalesce_str(
                 data.get("sunshine_credit"), data.get("sunshine")
             ),
+            "real_auth": bool(data.get("real_auth", False)),
+            "desc_text": data.get("desc_text", ""),
+            "label_desc": cls._parse_label_desc(data.get("label_desc")),
+            "verified_url": data.get("verified_url", ""),
+            "cnt_desc": data.get("cnt_desc", ""),
+            "friend_info": data.get("friend_info", ""),
             "raw_data": data,
         }
         return cls(**user_data)
+
+    @staticmethod
+    def _parse_label_desc(value: Any) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        labels: list[str] = []
+        for item in value:
+            if isinstance(item, str) and item.strip():
+                labels.append(item.strip())
+                continue
+            if isinstance(item, dict):
+                name = item.get("name")
+                if isinstance(name, str) and name.strip():
+                    labels.append(name.strip())
+        return labels
 
     def to_dict(self) -> dict[str, Any]:
         """
@@ -121,4 +150,11 @@ class User:
             "company": self.company,
             "registration_time": self.registration_time,
             "sunshine_credit": self.sunshine_credit,
+            "ip_location": self.ip_location,
+            "real_auth": self.real_auth,
+            "desc_text": self.desc_text,
+            "label_desc": self.label_desc,
+            "verified_url": self.verified_url,
+            "cnt_desc": self.cnt_desc,
+            "friend_info": self.friend_info,
         }

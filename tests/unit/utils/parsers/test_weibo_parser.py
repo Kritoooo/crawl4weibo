@@ -601,3 +601,54 @@ class TestWeiboParserUserInfo:
     def test_parse_user_info_invalid_format(self):
         with pytest.raises(ParseError):
             self.parser.parse_user_info({"data": {}})
+
+
+@pytest.mark.unit
+class TestWeiboParserProfileDetail:
+    """Test suite for parse_profile_detail"""
+
+    def setup_method(self):
+        self.parser = WeiboParser()
+
+    def test_parse_profile_detail_success(self):
+        response_data = {
+            "data": {
+                "birthday": "1995-02-03",
+                "created_at": "2010-01-01",
+                "education": {"school": "Test University"},
+                "career": [{"company": "Test Co"}],
+                "sunshine_credit": {"level": "A"},
+                "description": "Profile description",
+                "gender": "m",
+                "ip_location": "IP location: UK",
+                "real_auth": True,
+                "desc_text": "Original singer",
+                "verified_url": "https://verified.weibo.com/verify",
+                "cnt_desc": "Visits 160k+",
+                "friend_info": "Has 791 friends",
+                "label_desc": [{"name": "Test label"}],
+                "followers": {"total_number": 1200},
+            }
+        }
+
+        detail = self.parser.parse_profile_detail(response_data)
+
+        assert detail["birthday"] == "1995-02-03"
+        assert detail["registration_time"] == "2010-01-01"
+        assert detail["education"] == "Test University"
+        assert detail["company"] == "Test Co"
+        assert detail["sunshine_credit"] == "A"
+        assert detail["description"] == "Profile description"
+        assert detail["gender"] == "m"
+        assert detail["ip_location"] == "IP location: UK"
+        assert detail["real_auth"] is True
+        assert detail["desc_text"] == "Original singer"
+        assert detail["verified_url"] == "https://verified.weibo.com/verify"
+        assert detail["cnt_desc"] == "Visits 160k+"
+        assert detail["friend_info"] == "Has 791 friends"
+        assert detail["label_desc"] == ["Test label"]
+        assert detail["followers_count"] == 1200
+
+    def test_parse_profile_detail_invalid_format(self):
+        with pytest.raises(ParseError):
+            self.parser.parse_profile_detail({"ok": 1})

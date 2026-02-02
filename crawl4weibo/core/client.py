@@ -15,7 +15,7 @@ from ..exceptions.base import CrawlError, NetworkError, ParseError, UserNotFound
 from ..models.comment import Comment
 from ..models.post import Post
 from ..models.user import User
-from ..utils.cookie_fetcher import CookieFetcher
+from ..utils.cookie_fetcher import CookieFetcher, LOGIN_COOKIE_NAMES
 from ..utils.downloader import ImageDownloader
 from ..utils.logger import setup_logger
 from ..utils.parser import WeiboParser
@@ -176,6 +176,12 @@ class WeiboClient:
         elif isinstance(cookies, dict):
             self.session.cookies.update(cookies)
 
+    def _has_login_cookies(self) -> bool:
+        for name in LOGIN_COOKIE_NAMES:
+            if self.session.cookies.get(name):
+                return True
+        return False
+
     def _init_session(
         self,
         use_browser: bool = False,
@@ -308,6 +314,7 @@ class WeiboClient:
         params: dict[str, Any],
         max_retries: int = 3,
         use_proxy: bool = True,
+        headers: Optional[dict[str, str]] = None,
     ) -> dict[str, Any]:
         """
         Send HTTP request
@@ -318,6 +325,7 @@ class WeiboClient:
             max_retries: Maximum number of retries
             use_proxy: Whether to use proxy, default True. Set to False to
                 disable proxy for a single request
+            headers: Optional headers to override per request
 
         Returns:
             Response JSON data
@@ -346,8 +354,17 @@ class WeiboClient:
                     )
 
             try:
+                request_headers = None
+                if headers:
+                    request_headers = dict(self.session.headers)
+                    request_headers.update(headers)
+
                 response = self.session.get(
-                    url, params=params, proxies=proxies, timeout=5
+                    url,
+                    params=params,
+                    proxies=proxies,
+                    timeout=5,
+                    headers=request_headers,
                 )
 
                 if response.status_code == 200:
@@ -466,6 +483,44 @@ class WeiboClient:
         self.proxy_pool.clear_pool()
         self.logger.info("Proxy pool cleared")
 
+    def _is_empty_value(self, value: Any) -> bool:
+        if value is None:
+            return True
+        if isinstance(value, bool):
+            return False
+        if isinstance(value, str):
+            return not value.strip()
+        if isinstance(value, (list, dict, set, tuple)):
+            return len(value) == 0
+        if isinstance(value, (int, float)):
+            return value == 0
+        return False
+
+    def _merge_user_info(
+        self, base_info: dict[str, Any], extra_info: dict[str, Any]
+    ) -> dict[str, Any]:
+        merged = dict(base_info)
+        for key, value in extra_info.items():
+            if key not in merged:
+                if not self._is_empty_value(value):
+                    merged[key] = value
+                continue
+            if self._is_empty_value(merged[key]) and not self._is_empty_value(value):
+                merged[key] = value
+                continue
+            if isinstance(merged[key], bool) and merged[key] is False and value is True:
+                merged[key] = True
+        return merged
+
+    def _fetch_profile_detail(
+        self, uid: str, use_proxy: bool = True
+    ) -> dict[str, Any]:
+        url = "https://weibo.com/ajax/profile/detail"
+        headers = {"Referer": f"https://weibo.com/u/{uid}"}
+        data = self._request(url, {"uid": uid}, use_proxy=use_proxy, headers=headers)
+        print(data)
+        return self.parser.parse_profile_detail(data)
+
     @rate_limit()
     def get_user_by_uid(self, uid: str, use_proxy: bool = True) -> User:
         """
@@ -487,6 +542,15 @@ class WeiboClient:
             raise UserNotFoundError(f"User {uid} not found")
 
         user_info = self.parser.parse_user_info(data)
+
+        if self._has_login_cookies():
+            try:
+                detail_info = self._fetch_profile_detail(uid, use_proxy=use_proxy)
+                user_info = self._merge_user_info(user_info, detail_info)
+            except (ParseError, NetworkError) as e:
+                self.logger.warning(
+                    f"Failed to enrich user {uid} with profile detail: {e}"
+                )
         user = User.from_dict(user_info)
 
         self.logger.info(f"Fetched user: {user.screen_name}")
