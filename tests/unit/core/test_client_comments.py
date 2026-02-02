@@ -3,7 +3,6 @@
 import pytest
 import responses
 
-from crawl4weibo import WeiboClient
 from crawl4weibo.models.comment import Comment
 
 
@@ -14,8 +13,8 @@ class TestWeiboClientComments:
         client = client_no_rate_limit
         assert hasattr(client, "get_comments")
         assert hasattr(client, "get_all_comments")
-        assert callable(getattr(client, "get_comments"))
-        assert callable(getattr(client, "get_all_comments"))
+        assert callable(client.get_comments)
+        assert callable(client.get_all_comments)
 
     @responses.activate
     def test_get_comments_single_page(self, client_no_rate_limit):

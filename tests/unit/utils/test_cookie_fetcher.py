@@ -75,9 +75,8 @@ class TestLoginFlow:
 
         with patch(
             "crawl4weibo.utils.cookie_fetcher.time.time", side_effect=[0, 0]
-        ):
-            with pytest.raises(TimeoutError):
-                fetcher._wait_for_login_sync(context, timeout=0)
+        ), pytest.raises(TimeoutError):
+            fetcher._wait_for_login_sync(context, timeout=0)
 
     def test_ensure_login_sync_uses_storage_state(self, tmp_path):
         """Test sync login uses storage state when already logged in"""
@@ -138,9 +137,8 @@ class TestLoginFlow:
 
         with patch(
             "crawl4weibo.utils.cookie_fetcher.time.time", side_effect=[0, 0]
-        ):
-            with pytest.raises(TimeoutError):
-                await fetcher._wait_for_login_async(context, timeout=0)
+        ), pytest.raises(TimeoutError):
+            await fetcher._wait_for_login_async(context, timeout=0)
 
     @pytest.mark.asyncio
     async def test_ensure_login_async_uses_storage_state(self, tmp_path):

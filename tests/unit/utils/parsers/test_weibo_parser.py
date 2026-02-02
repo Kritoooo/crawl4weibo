@@ -81,11 +81,12 @@ class TestWeiboParserComments:
         assert pagination["max"] == 0
 
     def test_parse_comments_data_not_list(self):
-        """Test parsing when 'data.data' is not a list - gracefully handles by skipping invalid items"""
+        """Test parsing when 'data.data' is not a list."""
         response_data = {"data": {"data": "not_a_list", "total_number": 0, "max": 0}}
 
         # Should not raise, but will log errors and return empty list
-        # (each character in string gets passed to _parse_single_comment and fails gracefully)
+        # Each character in the string gets passed to _parse_single_comment
+        # and fails gracefully.
         comments, pagination = self.parser.parse_comments(response_data)
 
         # All comments fail to parse, so we get empty list
@@ -392,7 +393,7 @@ class TestWeiboParserComments:
         assert result is not None
         assert "<a" not in result["text"]
         assert "<b>" not in result["text"]
-        assert "Test with HTML tags" == result["text"]
+        assert result["text"] == "Test with HTML tags"
 
     def test_parse_single_comment_whitespace_in_text(self):
         """Test parsing comment with excessive whitespace"""
@@ -601,3 +602,77 @@ class TestWeiboParserUserInfo:
     def test_parse_user_info_invalid_format(self):
         with pytest.raises(ParseError):
             self.parser.parse_user_info({"data": {}})
+
+
+@pytest.mark.unit
+class TestWeiboParserProfileDetail:
+    """Test suite for parse_profile_detail"""
+
+    def setup_method(self):
+        self.parser = WeiboParser()
+
+    def test_parse_profile_detail_success(self):
+        response_data = {
+            "data": {
+                "birthday": "1995-02-03",
+                "created_at": "2010-01-01",
+                "education": {"school": "Test University"},
+                "career": [{"company": "Test Co"}],
+                "sunshine_credit": {"level": "A"},
+                "description": "Profile description",
+                "gender": "m",
+                "ip_location": "IP location: UK",
+                "real_auth": True,
+                "desc_text": "Original singer",
+                "verified_url": "https://verified.weibo.com/verify",
+                "cnt_desc": "Visits 160k+",
+                "friend_info": "Has 791 friends",
+                "label_desc": [{"name": "Test label"}],
+                "followers": {"total_number": 1200},
+            }
+        }
+
+        detail = self.parser.parse_profile_detail(response_data)
+
+        assert detail["birthday"] == "1995-02-03"
+        assert detail["registration_time"] == "2010-01-01"
+        assert detail["education"] == "Test University"
+        assert detail["company"] == "Test Co"
+        assert detail["sunshine_credit"] == "A"
+        assert detail["description"] == "Profile description"
+        assert detail["gender"] == "m"
+        assert detail["ip_location"] == "IP location: UK"
+        assert detail["real_auth"] is True
+        assert detail["desc_text"] == "Original singer"
+        assert detail["verified_url"] == "https://verified.weibo.com/verify"
+        assert detail["cnt_desc"] == "Visits 160k+"
+        assert detail["friend_info"] == "Has 791 friends"
+        assert detail["label_desc"] == ["Test label"]
+        assert detail["followers_count"] == 1200
+
+    def test_parse_profile_detail_fallbacks(self):
+        response_data = {
+            "data": {
+                "birthday_text": "1990-01-01",
+                "registration_time": "2012-02-02",
+                "education": {"items": [{"name": "Nested University"}]},
+                "career": "Plain Co",
+                "sunshine_credit": "B",
+                "label_desc": ["Label A", {"name": "Label B"}, "  "],
+                "followers": {"total_number": 12.0},
+            }
+        }
+
+        detail = self.parser.parse_profile_detail(response_data)
+
+        assert detail["birthday"] == "1990-01-01"
+        assert detail["registration_time"] == "2012-02-02"
+        assert detail["education"] == "Nested University"
+        assert detail["company"] == "Plain Co"
+        assert detail["sunshine_credit"] == "B"
+        assert detail["label_desc"] == ["Label A", "Label B"]
+        assert detail["followers_count"] == 12
+
+    def test_parse_profile_detail_invalid_format(self):
+        with pytest.raises(ParseError):
+            self.parser.parse_profile_detail({"ok": 1})

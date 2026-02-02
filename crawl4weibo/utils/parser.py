@@ -10,6 +10,7 @@ from typing import Any, Optional
 
 from ..exceptions.base import ParseError
 from .logger import get_logger
+from .normalizers import parse_label_desc
 
 
 class WeiboParser:
@@ -63,6 +64,97 @@ class WeiboParser:
         except Exception as e:
             self.logger.error(f"Failed to parse user info: {e}")
             raise ParseError(f"Failed to parse user info: {e}")
+
+    def _extract_first_text(self, value: Any, keys: tuple[str, ...]) -> str:
+        if isinstance(value, str):
+            return value.strip()
+        if isinstance(value, dict):
+            for key in keys:
+                text = value.get(key)
+                if isinstance(text, str) and text.strip():
+                    return text.strip()
+            for nested_key in ("items", "list", "data"):
+                if nested_key in value:
+                    text = self._extract_first_text(value[nested_key], keys)
+                    if text:
+                        return text
+        if isinstance(value, list):
+            for item in value:
+                text = self._extract_first_text(item, keys)
+                if text:
+                    return text
+        return ""
+
+    def parse_profile_detail(self, response_data: dict[str, Any]) -> dict[str, Any]:
+        """
+        Parse user profile detail from desktop API response
+
+        Args:
+            response_data: Raw API response data
+
+        Returns:
+            Dict containing parsed user detail information
+        """
+        try:
+            if "data" not in response_data or not isinstance(
+                response_data["data"], dict
+            ):
+                raise ParseError("Invalid profile detail response format")
+
+            detail = response_data["data"]
+            sunshine = detail.get("sunshine_credit") or detail.get("sunshine") or ""
+
+            if isinstance(sunshine, dict):
+                sunshine_credit = self._extract_first_text(
+                    sunshine, ("level", "credit", "sunshine_credit")
+                )
+            else:
+                sunshine_credit = str(sunshine).strip() if sunshine else ""
+
+            education_source = detail.get("education") or detail.get(
+                "education_background"
+            )
+            company_source = (
+                detail.get("career")
+                or detail.get("company")
+                or detail.get("company_name")
+            )
+
+            followers_count = None
+            followers = detail.get("followers")
+            if isinstance(followers, dict):
+                total_number = followers.get("total_number")
+                if isinstance(total_number, (int, float)):
+                    followers_count = int(total_number)
+
+            label_names = parse_label_desc(detail.get("label_desc"))
+
+            return {
+                "birthday": detail.get("birthday") or detail.get("birthday_text") or "",
+                "education": self._extract_first_text(
+                    education_source, ("school", "name")
+                ),
+                "company": self._extract_first_text(
+                    company_source, ("company", "company_name", "name")
+                ),
+                "registration_time": detail.get("created_at")
+                or detail.get("registration_time")
+                or "",
+                "sunshine_credit": sunshine_credit,
+                "description": detail.get("description") or "",
+                "gender": detail.get("gender") or "",
+                "ip_location": detail.get("ip_location") or "",
+                "real_auth": detail.get("real_auth") or False,
+                "desc_text": detail.get("desc_text") or "",
+                "verified_url": detail.get("verified_url") or "",
+                "cnt_desc": detail.get("cnt_desc") or "",
+                "friend_info": detail.get("friend_info") or "",
+                "label_desc": label_names,
+                "followers_count": followers_count,
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to parse profile detail: {e}")
+            raise ParseError(f"Failed to parse profile detail: {e}")
 
     def parse_posts(
         self, response_data: dict[str, Any]
