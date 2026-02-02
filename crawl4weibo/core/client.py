@@ -15,7 +15,7 @@ from ..exceptions.base import CrawlError, NetworkError, ParseError, UserNotFound
 from ..models.comment import Comment
 from ..models.post import Post
 from ..models.user import User
-from ..utils.cookie_fetcher import CookieFetcher, LOGIN_COOKIE_NAMES
+from ..utils.cookie_fetcher import LOGIN_COOKIE_NAMES, CookieFetcher
 from ..utils.downloader import ImageDownloader
 from ..utils.logger import setup_logger
 from ..utils.parser import WeiboParser
@@ -518,7 +518,6 @@ class WeiboClient:
         url = "https://weibo.com/ajax/profile/detail"
         headers = {"Referer": f"https://weibo.com/u/{uid}"}
         data = self._request(url, {"uid": uid}, use_proxy=use_proxy, headers=headers)
-        print(data)
         return self.parser.parse_profile_detail(data)
 
     @rate_limit()
