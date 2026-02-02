@@ -10,6 +10,7 @@ from typing import Any, Optional
 
 from ..exceptions.base import ParseError
 from .logger import get_logger
+from .normalizers import parse_label_desc
 
 
 class WeiboParser:
@@ -126,17 +127,7 @@ class WeiboParser:
                 if isinstance(total_number, (int, float)):
                     followers_count = int(total_number)
 
-            label_desc = detail.get("label_desc")
-            label_names: list[str] = []
-            if isinstance(label_desc, list):
-                for item in label_desc:
-                    if isinstance(item, str) and item.strip():
-                        label_names.append(item.strip())
-                        continue
-                    if isinstance(item, dict):
-                        name = item.get("name")
-                        if isinstance(name, str) and name.strip():
-                            label_names.append(name.strip())
+            label_names = parse_label_desc(detail.get("label_desc"))
 
             return {
                 "birthday": detail.get("birthday") or detail.get("birthday_text") or "",

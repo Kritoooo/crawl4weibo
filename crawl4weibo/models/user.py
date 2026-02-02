@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Optional
 
+from ..utils.normalizers import parse_label_desc
+
 
 @dataclass
 class User:
@@ -102,7 +104,7 @@ class User:
             ),
             "real_auth": bool(data.get("real_auth", False)),
             "desc_text": data.get("desc_text", ""),
-            "label_desc": cls._parse_label_desc(data.get("label_desc")),
+            "label_desc": parse_label_desc(data.get("label_desc")),
             "verified_url": data.get("verified_url", ""),
             "cnt_desc": data.get("cnt_desc", ""),
             "friend_info": data.get("friend_info", ""),
@@ -112,18 +114,7 @@ class User:
 
     @staticmethod
     def _parse_label_desc(value: Any) -> list[str]:
-        if not isinstance(value, list):
-            return []
-        labels: list[str] = []
-        for item in value:
-            if isinstance(item, str) and item.strip():
-                labels.append(item.strip())
-                continue
-            if isinstance(item, dict):
-                name = item.get("name")
-                if isinstance(name, str) and name.strip():
-                    labels.append(name.strip())
-        return labels
+        return parse_label_desc(value)
 
     def to_dict(self) -> dict[str, Any]:
         """
