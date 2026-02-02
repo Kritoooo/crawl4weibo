@@ -177,10 +177,7 @@ class WeiboClient:
             self.session.cookies.update(cookies)
 
     def _has_login_cookies(self) -> bool:
-        for name in LOGIN_COOKIE_NAMES:
-            if self.session.cookies.get(name):
-                return True
-        return False
+        return any(self.session.cookies.get(name) for name in LOGIN_COOKIE_NAMES)
 
     def _init_session(
         self,
@@ -512,9 +509,7 @@ class WeiboClient:
                 merged[key] = True
         return merged
 
-    def _fetch_profile_detail(
-        self, uid: str, use_proxy: bool = True
-    ) -> dict[str, Any]:
+    def _fetch_profile_detail(self, uid: str, use_proxy: bool = True) -> dict[str, Any]:
         url = "https://weibo.com/ajax/profile/detail"
         headers = {"Referer": f"https://weibo.com/u/{uid}"}
         data = self._request(url, {"uid": uid}, use_proxy=use_proxy, headers=headers)

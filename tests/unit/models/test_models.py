@@ -82,6 +82,16 @@ class TestUser:
         assert user.cnt_desc == "访问量 16万+"
         assert user.friend_info == "他有 791 个好友"
 
+    def test_user_from_dict_label_desc_strings(self):
+        """Test label_desc parsing for string lists"""
+        data = {
+            "id": "123456",
+            "screen_name": "LabelUser",
+            "label_desc": ["Label A", "  "],
+        }
+        user = User.from_dict(data)
+        assert user.label_desc == ["Label A"]
+
     def test_user_to_dict(self):
         """Test User to dictionary conversion"""
         user = User(

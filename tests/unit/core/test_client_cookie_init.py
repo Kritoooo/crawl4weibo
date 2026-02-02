@@ -1,8 +1,9 @@
 """Tests for WeiboClient cookie initialization"""
 
-import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from crawl4weibo import WeiboClient
 
