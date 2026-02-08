@@ -4,6 +4,8 @@
 crawl4weibo - A professional Weibo crawler library
 """
 
+import sys
+
 __version__ = "0.1.0"
 __author__ = "Your Name"
 __email__ = "your.email@example.com"
@@ -17,7 +19,6 @@ from .exceptions.base import (
     RateLimitError,
     UserNotFoundError,
 )
-from .mcp.server import create_mcp_server
 from .models.comment import Comment
 from .models.post import Post
 from .models.user import User
@@ -39,5 +40,9 @@ __all__ = [
     "UserNotFoundError",
     "NetworkError",
     "ParseError",
-    "create_mcp_server",
 ]
+
+if sys.version_info >= (3, 10):
+    from .mcp.server import create_mcp_server as create_mcp_server
+
+    __all__.append("create_mcp_server")

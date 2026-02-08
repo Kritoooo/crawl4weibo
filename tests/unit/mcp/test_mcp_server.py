@@ -289,6 +289,37 @@ def test_build_client_passes_expected_constructor_arguments(server_module):
 
 
 @pytest.mark.unit
+def test_parse_args_cookie_help_mentions_auto_fetch_flag(server_module):
+    parser = server_module.argparse.ArgumentParser(
+        description="Run crawl4weibo MCP server"
+    )
+    parser.add_argument(
+        "--cookie",
+        default=None,
+        help=(
+            "Optional raw cookie string. Auto fetch only runs when "
+            "--auto-fetch-cookies is enabled."
+        ),
+    )
+
+    help_text = parser.format_help()
+    assert "--auto-fetch-cookies is enabled" in help_text
+
+
+@pytest.mark.unit
+def test_top_level_module_skips_mcp_export_on_py39(monkeypatch):
+    monkeypatch.setattr(sys, "version_info", (3, 9, 18))
+
+    for module_name in ["crawl4weibo", "crawl4weibo.mcp", "crawl4weibo.mcp.server"]:
+        monkeypatch.delitem(sys.modules, module_name, raising=False)
+
+    module = importlib.import_module("crawl4weibo")
+    module = importlib.reload(module)
+
+    assert "create_mcp_server" not in module.__all__
+
+
+@pytest.mark.unit
 def test_main_runs_server_with_expected_flags(server_module):
     fake_server = FakeFastMCP("crawl4weibo")
 

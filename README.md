@@ -212,6 +212,9 @@ posts = client.get_user_posts("2656274875", page=1)  # Uses proxy
 
 You can run crawl4weibo as an MCP server so LLM agents can call its tools directly.
 
+> MCP server support requires Python 3.10+.
+> On Python 3.9, `pip install "crawl4weibo[mcp]"` will not install MCP support.
+
 Install with MCP extra:
 
 ```bash
@@ -235,6 +238,7 @@ Available tools:
 
 CLI options:
 - `--cookie`: pass raw cookie string directly.
+  Auto-fetch only applies when `--auto-fetch-cookies` is enabled.
 - `--disable-browser-cookies`: use requests-based cookie mode.
 - `--auto-fetch-cookies`: auto-fetch cookies on startup (disabled by default).
 
