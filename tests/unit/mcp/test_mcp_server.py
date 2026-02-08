@@ -2,10 +2,13 @@
 
 import importlib
 import sys
+from datetime import date
 from types import ModuleType
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+from crawl4weibo.exceptions.base import CrawlError
 
 
 class FakeFastMCP:
@@ -99,6 +102,36 @@ def test_get_user_by_uid_tool_serializes_result(server_module):
 
 
 @pytest.mark.unit
+def test_get_user_posts_tool_passes_arguments(server_module):
+    mock_client = MagicMock()
+    mock_post = MagicMock()
+    mock_post.to_dict.return_value = {"id": "10", "text": "post"}
+    mock_client.get_user_posts.return_value = [mock_post]
+
+    with patch.object(server_module, "_build_client", return_value=mock_client):
+        server = server_module.create_mcp_server()
+
+    result = server.tools["get_user_posts"](
+        "123",
+        page=2,
+        expand=True,
+        with_comments=True,
+        comment_limit=5,
+        use_proxy=False,
+    )
+
+    assert result == [{"id": "10", "text": "post"}]
+    mock_client.get_user_posts.assert_called_once_with(
+        "123",
+        page=2,
+        expand=True,
+        with_comments=True,
+        comment_limit=5,
+        use_proxy=False,
+    )
+
+
+@pytest.mark.unit
 def test_search_posts_tool_returns_posts_and_pagination(server_module):
     mock_client = MagicMock()
 
@@ -113,6 +146,18 @@ def test_search_posts_tool_returns_posts_and_pagination(server_module):
 
     assert result["posts"] == [{"id": "100", "text": "hello"}]
     assert result["pagination"] == {"page": 2, "has_more": True}
+
+
+@pytest.mark.unit
+def test_search_posts_tool_non_tuple_result_is_returned(server_module):
+    mock_client = MagicMock()
+    mock_client.search_posts.return_value = {"error": "blocked"}
+
+    with patch.object(server_module, "_build_client", return_value=mock_client):
+        server = server_module.create_mcp_server()
+
+    result = server.tools["search_posts"]("python")
+    assert result == {"error": "blocked"}
 
 
 @pytest.mark.unit
@@ -144,12 +189,103 @@ def test_tool_returns_error_payload_on_exception(server_module):
 
 
 @pytest.mark.unit
+def test_get_comments_and_get_all_comments_tools(server_module):
+    mock_client = MagicMock()
+
+    comment = MagicMock()
+    comment.to_dict.return_value = {"id": "c1", "text": "nice"}
+    mock_client.get_comments.return_value = ([comment], {"page": 1, "max": 3})
+    mock_client.get_all_comments.return_value = [comment]
+
+    with patch.object(server_module, "_build_client", return_value=mock_client):
+        server = server_module.create_mcp_server()
+
+    comments_result = server.tools["get_comments"]("999", page=2, use_proxy=False)
+    all_comments_result = server.tools["get_all_comments"](
+        "999",
+        max_pages=4,
+        use_proxy=False,
+    )
+
+    assert comments_result == {
+        "comments": [{"id": "c1", "text": "nice"}],
+        "pagination": {"page": 1, "max": 3},
+    }
+    assert all_comments_result == [{"id": "c1", "text": "nice"}]
+
+    mock_client.get_comments.assert_called_once_with("999", page=2, use_proxy=False)
+    mock_client.get_all_comments.assert_called_once_with(
+        "999",
+        max_pages=4,
+        use_proxy=False,
+    )
+
+
+@pytest.mark.unit
+def test_get_comments_non_tuple_result_is_returned(server_module):
+    mock_client = MagicMock()
+    mock_client.get_comments.return_value = {"error": "timeout"}
+
+    with patch.object(server_module, "_build_client", return_value=mock_client):
+        server = server_module.create_mcp_server()
+
+    result = server.tools["get_comments"]("999")
+    assert result == {"error": "timeout"}
+
+
+@pytest.mark.unit
 def test_health_resource_returns_json(server_module):
     with patch.object(server_module, "_build_client", return_value=MagicMock()):
         server = server_module.create_mcp_server()
 
     payload = server.resources["weibo://health"]()
     assert payload == '{"status": "ok", "service": "crawl4weibo-mcp"}'
+
+
+@pytest.mark.unit
+def test_parse_args_defaults_and_flags(server_module):
+    defaults = server_module.parse_args([])
+    assert defaults.cookie is None
+    assert defaults.disable_browser_cookies is False
+    assert defaults.auto_fetch_cookies is False
+
+    flags = server_module.parse_args(
+        [
+            "--cookie",
+            "SUB=abc",
+            "--disable-browser-cookies",
+            "--auto-fetch-cookies",
+        ]
+    )
+    assert flags.cookie == "SUB=abc"
+    assert flags.disable_browser_cookies is True
+    assert flags.auto_fetch_cookies is True
+
+
+@pytest.mark.unit
+def test_safe_call_handles_crawl_error_and_serialize_date(server_module):
+    result = server_module._safe_call(lambda: (_ for _ in ()).throw(CrawlError("x")))
+    assert result == {"error": "x", "type": "CrawlError"}
+
+    serialized = server_module._serialize_for_mcp({"day": date(2026, 2, 8)})
+    assert serialized == {"day": "2026-02-08"}
+
+
+@pytest.mark.unit
+def test_build_client_passes_expected_constructor_arguments(server_module):
+    with patch.object(server_module, "WeiboClient") as mock_cls:
+        server_module._build_client(
+            cookie="SUB=token",
+            use_browser_cookies=False,
+            auto_fetch_cookies=True,
+        )
+
+    mock_cls.assert_called_once_with(
+        cookies="SUB=token",
+        auto_fetch_cookies=False,
+        use_browser_cookies=False,
+        log_level="ERROR",
+    )
 
 
 @pytest.mark.unit
