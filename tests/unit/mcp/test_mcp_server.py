@@ -132,6 +132,39 @@ def test_get_user_posts_tool_passes_arguments(server_module):
 
 
 @pytest.mark.unit
+def test_get_user_posts_compact_mode_reduces_payload(server_module):
+    mock_client = MagicMock()
+    mock_post = MagicMock()
+    mock_post.to_dict.return_value = {
+        "id": "10",
+        "bid": "abc",
+        "user_id": "u1",
+        "text": "x" * 300,
+        "pic_urls": ["a", "b", "c"],
+        "video_url": "https://video.example.com/v.mp4",
+        "created_at": "2026-02-08T16:00:00+08:00",
+        "comments_count": 3,
+        "attitudes_count": 9,
+    }
+    mock_client.get_user_posts.return_value = [mock_post]
+
+    with patch.object(server_module, "_build_client", return_value=mock_client):
+        server = server_module.create_mcp_server()
+
+    compact_result = server.tools["get_user_posts"]("123")
+    full_result = server.tools["get_user_posts"]("123", detail_level="full")
+
+    assert compact_result[0]["id"] == "10"
+    assert compact_result[0]["text_truncated"] is True
+    assert compact_result[0]["image_count"] == 3
+    assert compact_result[0]["has_video"] is True
+    assert "video_url" not in compact_result[0]
+
+    assert full_result[0]["video_url"] == "https://video.example.com/v.mp4"
+    assert full_result[0]["pic_urls"] == ["a", "b", "c"]
+
+
+@pytest.mark.unit
 def test_search_posts_tool_returns_posts_and_pagination(server_module):
     mock_client = MagicMock()
 
@@ -219,6 +252,87 @@ def test_get_comments_and_get_all_comments_tools(server_module):
         max_pages=4,
         use_proxy=False,
     )
+
+
+@pytest.mark.unit
+def test_get_comments_compact_mode_reduces_payload(server_module):
+    mock_client = MagicMock()
+    comment = MagicMock()
+    comment.to_dict.return_value = {
+        "id": "c1",
+        "text": "nice " * 80,
+        "created_at": "1小时前",
+        "source": "来自北京",
+        "user_id": "u1",
+        "user_screen_name": "Alice",
+        "user_avatar_url": "https://avatar.example.com/a.jpg",
+        "user_verified": False,
+        "user_verified_type": -1,
+        "like_counts": 3,
+        "reply_id": "r1",
+        "reply_text": "reply " * 80,
+        "pic_url": "https://img.example.com/p.jpg",
+    }
+
+    mock_client.get_comments.return_value = ([comment], {"total_number": 1, "max": 1})
+
+    with patch.object(server_module, "_build_client", return_value=mock_client):
+        server = server_module.create_mcp_server()
+
+    compact_result = server.tools["get_comments"]("999")
+    full_result = server.tools["get_comments"]("999", detail_level="full")
+
+    compact_comment = compact_result["comments"][0]
+    assert compact_comment["id"] == "c1"
+    assert compact_comment["text_truncated"] is True
+    assert compact_comment["reply_text_truncated"] is True
+    assert compact_comment["has_image"] is True
+    assert "user_avatar_url" not in compact_comment
+
+    full_comment = full_result["comments"][0]
+    assert full_comment["user_avatar_url"] == "https://avatar.example.com/a.jpg"
+    assert full_comment["pic_url"] == "https://img.example.com/p.jpg"
+
+
+@pytest.mark.unit
+def test_get_user_by_uid_compact_mode_reduces_payload(server_module):
+    mock_client = MagicMock()
+    mock_user = MagicMock()
+    mock_user.to_dict.return_value = {
+        "id": "u1",
+        "screen_name": "Alice",
+        "description": "desc " * 100,
+        "followers_count": 123,
+        "avatar_url": "https://avatar.example.com/a.jpg",
+        "verified": True,
+    }
+    mock_client.get_user_by_uid.return_value = mock_user
+
+    with patch.object(server_module, "_build_client", return_value=mock_client):
+        server = server_module.create_mcp_server()
+
+    compact_result = server.tools["get_user_by_uid"]("u1")
+    full_result = server.tools["get_user_by_uid"]("u1", detail_level="full")
+
+    assert compact_result["id"] == "u1"
+    assert compact_result["description_truncated"] is True
+    assert "avatar_url" not in compact_result
+
+    assert full_result["avatar_url"] == "https://avatar.example.com/a.jpg"
+
+
+@pytest.mark.unit
+def test_invalid_detail_level_returns_validation_error(server_module):
+    mock_client = MagicMock()
+
+    with patch.object(server_module, "_build_client", return_value=mock_client):
+        server = server_module.create_mcp_server()
+
+    result = server.tools["search_posts"]("ai", detail_level="verbose")
+
+    assert result["type"] == "ValidationError"
+    assert "detail_level" in result["error"]
+    mock_client.search_posts.assert_not_called()
 
 
 @pytest.mark.unit
@@ -370,6 +484,15 @@ def test_create_mcp_server_raises_runtime_error_without_mcp(monkeypatch):
         "mcp",
     ]:
         monkeypatch.delitem(sys.modules, module_name, raising=False)
+
+    original_import = __import__
+
+    def mock_import(name, *args, **kwargs):
+        if name == "mcp.server.fastmcp":
+            raise ImportError("mcp not installed")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr("builtins.__import__", mock_import)
 
     module = importlib.import_module("crawl4weibo.mcp.server")
     module = importlib.reload(module)

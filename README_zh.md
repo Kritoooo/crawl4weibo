@@ -234,6 +234,10 @@ crawl4weibo-mcp
 - `get_comments`
 - `get_all_comments`
 
+响应详细级别：
+- MCP 工具默认返回精简结果（`detail_level="compact"`），更节省上下文和 token。
+- 如需完整字段（更接近原始 API 结构），可传 `detail_level="full"`。
+
 CLI 参数：
 - `--cookie`：直接传入原始 cookie 字符串。
   仅在启用 `--auto-fetch-cookies` 时才会自动抓取 cookie。

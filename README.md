@@ -236,6 +236,10 @@ Available tools:
 - `get_comments`
 - `get_all_comments`
 
+Response detail levels:
+- By default, MCP tools return compact payloads (`detail_level="compact"`) to save context and tokens.
+- Use `detail_level="full"` when you need full model fields (closer to raw API shape).
+
 CLI options:
 - `--cookie`: pass raw cookie string directly.
   Auto-fetch only applies when `--auto-fetch-cookies` is enabled.
