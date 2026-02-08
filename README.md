@@ -210,54 +210,12 @@ posts = client.get_user_posts("2656274875", page=1)  # Uses proxy
 
 ## MCP Server (for agents)
 
-You can run crawl4weibo as an MCP server so LLM agents can call its tools directly.
+MCP setup details moved to dedicated docs:
+- `docs/MCP.md` (English)
+- `docs/MCP_zh.md` (中文)
 
-> MCP server support requires Python 3.10+.
-> On Python 3.9, `pip install "crawl4weibo[mcp]"` will not install MCP support.
-
-Install with MCP extra:
-
-```bash
-pip install "crawl4weibo[mcp]"
-```
-
-Start server (stdio transport):
-
-```bash
-crawl4weibo-mcp
-```
-
-Available tools:
-- `get_user_by_uid`
-- `get_user_posts`
-- `get_post_by_bid`
-- `search_users`
-- `search_posts`
-- `get_comments`
-- `get_all_comments`
-
-Response detail levels:
-- By default, MCP tools return compact payloads (`detail_level="compact"`) to save context and tokens.
-- Use `detail_level="full"` when you need full model fields (closer to raw API shape).
-
-CLI options:
-- `--cookie`: pass raw cookie string directly.
-  Auto-fetch only applies when `--auto-fetch-cookies` is enabled.
-- `--disable-browser-cookies`: use requests-based cookie mode.
-- `--auto-fetch-cookies`: auto-fetch cookies on startup (disabled by default).
-
-Quick MCP config example (Claude Desktop):
-
-```json
-{
-  "mcpServers": {
-    "crawl4weibo": {
-      "command": "crawl4weibo-mcp",
-      "args": ["--auto-fetch-cookies"]
-    }
-  }
-}
-```
+These docs include requirements, installation, startup, tool list,
+response detail levels, and Codex/Claude configuration examples.
 
 ## Development & Testing
 ```bash
