@@ -213,18 +213,33 @@ posts = client.get_user_posts("2656274875", page=1)  # Uses proxy
 You can run crawl4weibo as an MCP server so LLM agents can call its tools directly.
 
 > MCP server support requires Python 3.10+.
-> On Python 3.9, `pip install "crawl4weibo[mcp]"` will not install MCP support.
+> On Python 3.9, the `crawl4weibo[mcp]` extra is unavailable
+> regardless of installer (`uv`, `uvx`, `pip`).
 
-Install with MCP extra:
+Install with MCP extra (recommended with uv):
+
+```bash
+uv tool install "crawl4weibo[mcp]"
+uv tool run --from "crawl4weibo[mcp]" python -m playwright install chromium
+```
+
+Alternative (pip):
 
 ```bash
 pip install "crawl4weibo[mcp]"
+python -m playwright install chromium
 ```
 
 Start server (stdio transport):
 
 ```bash
 crawl4weibo-mcp
+```
+
+If the command is not on your `PATH`:
+
+```bash
+uv tool run --from "crawl4weibo[mcp]" crawl4weibo-mcp
 ```
 
 Available tools:

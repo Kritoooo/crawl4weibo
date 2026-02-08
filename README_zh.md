@@ -211,18 +211,33 @@ posts = client.get_user_posts("2656274875", page=1)  # 使用代理
 可将 crawl4weibo 作为 MCP 服务运行，供 LLM Agent 直接调用。
 
 > MCP 服务端功能要求 Python 3.10+。
-> 在 Python 3.9 下，`pip install "crawl4weibo[mcp]"` 不会安装 MCP 支持。
+> 在 Python 3.9 下，无论使用 `uv`、`uvx` 还是 `pip`，
+> `crawl4weibo[mcp]` 额外依赖都不会生效。
 
-安装（含 MCP 可选依赖）：
+安装（含 MCP 可选依赖，推荐 uv）：
+
+```bash
+uv tool install "crawl4weibo[mcp]"
+uv tool run --from "crawl4weibo[mcp]" python -m playwright install chromium
+```
+
+备选（pip）：
 
 ```bash
 pip install "crawl4weibo[mcp]"
+python -m playwright install chromium
 ```
 
 启动服务（stdio 传输）：
 
 ```bash
 crawl4weibo-mcp
+```
+
+若命令不在 `PATH` 中：
+
+```bash
+uv tool run --from "crawl4weibo[mcp]" crawl4weibo-mcp
 ```
 
 提供的工具：
