@@ -221,10 +221,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--cookie",
         default=None,
-        help=(
-            "Optional raw cookie string. "
-            "If omitted, cookies are fetched automatically."
-        ),
+        help="Optional raw cookie string. If omitted, cookies are auto-fetched.",
     )
     parser.add_argument(
         "--disable-browser-cookies",
