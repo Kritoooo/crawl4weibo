@@ -259,6 +259,22 @@ Quick MCP config example (Claude Desktop):
 }
 ```
 
+Codex CLI config (stdio):
+
+```bash
+# Recommended: persistent tool install via uv
+uv tool install "crawl4weibo[mcp]"
+uv tool run --from "crawl4weibo[mcp]" python -m playwright install chromium
+codex mcp add crawl4weibo -- crawl4weibo-mcp --auto-fetch-cookies
+```
+
+```bash
+# Optional: uvx (ephemeral) + prewarm Playwright to avoid handshake timeouts
+uvx --from "crawl4weibo[mcp]" python -m playwright install chromium
+codex mcp add crawl4weibo -- uvx --from "crawl4weibo[mcp]" \
+  crawl4weibo-mcp --auto-fetch-cookies
+```
+
 ## Development & Testing
 ```bash
 uv sync --dev                # Install dev dependencies
