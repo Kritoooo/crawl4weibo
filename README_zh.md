@@ -206,6 +206,57 @@ posts = client.get_user_posts("2656274875", page=1)  # 使用代理
 - `download_post_images(post, ...)`、`download_user_posts_images(uid, pages=2, ...)`：下载图像素材
 - **统一异常**：`NetworkError`、`RateLimitError`、`UserNotFoundError` 等，便于业务兜底
 
+## MCP 服务器（供 Agent 调用）
+
+可将 crawl4weibo 作为 MCP 服务运行，供 LLM Agent 直接调用。
+
+> MCP 服务端功能要求 Python 3.10+。
+> 在 Python 3.9 下，`pip install "crawl4weibo[mcp]"` 不会安装 MCP 支持。
+
+安装（含 MCP 可选依赖）：
+
+```bash
+pip install "crawl4weibo[mcp]"
+```
+
+启动服务（stdio 传输）：
+
+```bash
+crawl4weibo-mcp
+```
+
+提供的工具：
+- `get_user_by_uid`
+- `get_user_posts`
+- `get_post_by_bid`
+- `search_users`
+- `search_posts`
+- `get_comments`
+- `get_all_comments`
+
+响应详细级别：
+- MCP 工具默认返回精简结果（`detail_level="compact"`），更节省上下文和 token。
+- 如需完整字段（更接近原始 API 结构），可传 `detail_level="full"`。
+
+CLI 参数：
+- `--cookie`：直接传入原始 cookie 字符串。
+  仅在启用 `--auto-fetch-cookies` 时才会自动抓取 cookie。
+- `--disable-browser-cookies`：禁用 Playwright，改用 requests 方式。
+- `--auto-fetch-cookies`：启动时自动抓取 cookie（默认关闭）。
+
+MCP 配置示例（Claude Desktop）：
+
+```json
+{
+  "mcpServers": {
+    "crawl4weibo": {
+      "command": "crawl4weibo-mcp",
+      "args": ["--auto-fetch-cookies"]
+    }
+  }
+}
+```
+
 ## 开发与测试
 ```bash
 uv sync --dev                # 安装开发依赖
