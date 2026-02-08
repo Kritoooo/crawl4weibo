@@ -35,6 +35,9 @@ dynamic = ["version"]
 [project.urls]
 Homepage = "https://github.com/Praeviso/crawl4weibo"
 
+[project.scripts]
+crawl4weibo-mcp = "crawl4weibo.mcp.server:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=6.0",
@@ -42,6 +45,9 @@ dev = [
     "black",
     "isort",
     "flake8",
+]
+mcp = [
+    "mcp>=1.0.0,<2.0.0; python_version >= '3.10'",
 ]
 
 [tool.setuptools.packages.find]

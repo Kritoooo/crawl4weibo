@@ -17,6 +17,7 @@ from .exceptions.base import (
     RateLimitError,
     UserNotFoundError,
 )
+from .mcp.server import create_mcp_server
 from .models.comment import Comment
 from .models.post import Post
 from .models.user import User
@@ -38,4 +39,5 @@ __all__ = [
     "UserNotFoundError",
     "NetworkError",
     "ParseError",
+    "create_mcp_server",
 ]

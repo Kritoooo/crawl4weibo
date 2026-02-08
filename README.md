@@ -208,6 +208,49 @@ posts = client.get_user_posts("2656274875", page=1)  # Uses proxy
 - `download_post_images(post, ...)`, `download_user_posts_images(uid, pages=2, ...)`: Download image assets
 - **Unified Exceptions**: `NetworkError`, `RateLimitError`, `UserNotFoundError`, etc., for business-level error handling
 
+## MCP Server (for agents)
+
+You can run crawl4weibo as an MCP server so LLM agents can call its tools directly.
+
+Install with MCP extra:
+
+```bash
+pip install "crawl4weibo[mcp]"
+```
+
+Start server (stdio transport):
+
+```bash
+crawl4weibo-mcp
+```
+
+Available tools:
+- `get_user_by_uid`
+- `get_user_posts`
+- `get_post_by_bid`
+- `search_users`
+- `search_posts`
+- `get_comments`
+- `get_all_comments`
+
+CLI options:
+- `--cookie`: pass raw cookie string directly.
+- `--disable-browser-cookies`: use requests-based cookie mode.
+- `--auto-fetch-cookies`: auto-fetch cookies on startup (disabled by default).
+
+Quick MCP config example (Claude Desktop):
+
+```json
+{
+  "mcpServers": {
+    "crawl4weibo": {
+      "command": "crawl4weibo-mcp",
+      "args": ["--auto-fetch-cookies"]
+    }
+  }
+}
+```
+
 ## Development & Testing
 ```bash
 uv sync --dev                # Install dev dependencies
