@@ -16,9 +16,9 @@ def main():
     print("Crawl4Weibo - Weibo Crawler")
     print("=" * 30)
 
-    client = WeiboClient()
+    client = WeiboClient(login_cookies=True)
 
-    test_uid = "2656274875"
+    test_uid = "2304129841"
 
     try:
         print("\nFetching user information...")
@@ -33,42 +33,42 @@ def main():
         posts = (posts_page1 or []) + (posts_page2 or [])
         print(f"Retrieved {len(posts)} posts")
 
-        for i, post in enumerate(posts[:3], 1):
-            print(f"  {i}. {post.text[:50]}...")
-            print(f"     Likes: {post.attitudes_count} | Comments: {post.comments_count}")
+        # for i, post in enumerate(posts[:3], 1):
+        #     print(f"  {i}. {post.text[:50]}...")
+        #     print(f"     Likes: {post.attitudes_count} | Comments: {post.comments_count}")
 
-        if posts:
-            print("\nFetching single post by ID...")
-            first_post_bid = posts[0].bid
-            print(f"Fetching post ID: {first_post_bid}")
-            single_post = client.get_post_by_bid(first_post_bid)
-            print(f"Content: {single_post.text[:50]}...")
+        # if posts:
+        #     print("\nFetching single post by ID...")
+        #     first_post_bid = posts[0].bid
+        #     print(f"Fetching post ID: {first_post_bid}")
+        #     single_post = client.get_post_by_bid(first_post_bid)
+        #     print(f"Content: {single_post.text[:50]}...")
 
-        print("\nSearching users...")
-        users = client.search_users("新浪")
-        for user in users:
-            print(f"  - {user.screen_name} (Followers: {user.followers_count})")
+        # print("\nSearching users...")
+        # users = client.search_users("新浪")
+        # for user in users:
+        #     print(f"  - {user.screen_name} (Followers: {user.followers_count})")
 
-        print("\nSearching posts...")
-        posts = client.search_posts_by_count("人工智能", count=40)
-        for post in posts:
-            print(f"  - {post.text[:50]}...")
+        # print("\nSearching posts...")
+        # posts = client.search_posts_by_count("人工智能", count=40)
+        # for post in posts:
+        #     print(f"  - {post.text[:50]}...")
 
-        # Get post comments
-        if posts:
-            print("\nFetching comments for first post...")
-            post_id = posts[0].id
-            comments, pagination = client.get_comments(post_id, page=1)
-            print(f"Retrieved {len(comments)} comments")
-            print(f"Total comments: {pagination['total_number']}")
+        # # Get post comments
+        # if posts:
+        #     print("\nFetching comments for first post...")
+        #     post_id = posts[0].id
+        #     comments, pagination = client.get_comments(post_id, page=1)
+        #     print(f"Retrieved {len(comments)} comments")
+        #     print(f"Total comments: {pagination['total_number']}")
 
-            # Get all comments with automatic pagination
-            print("\nFetching all comments (limited to 3 pages)...")
-            all_comments = client.get_all_comments(post_id, max_pages=3)
-            for i, comment in enumerate(all_comments[:3], 1):
-                print(f"  {i}. {comment.user_screen_name}: {comment.text[:50]}...")
+        #     # Get all comments with automatic pagination
+        #     print("\nFetching all comments (limited to 3 pages)...")
+        #     all_comments = client.get_all_comments(post_id, max_pages=3)
+        #     for i, comment in enumerate(all_comments[:3], 1):
+        #         print(f"  {i}. {comment.user_screen_name}: {comment.text[:50]}...")
 
-        print("\nTest completed successfully!")
+        # print("\nTest completed successfully!")
 
     except Exception as e:
         print(f"Error: {e}")

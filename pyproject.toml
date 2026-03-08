@@ -37,6 +37,7 @@ Homepage = "https://github.com/Praeviso/crawl4weibo"
 
 [project.scripts]
 crawl4weibo-mcp = "crawl4weibo.mcp.server:main"
+crawl4weibo-cli = "crawl4weibo.cli:main"
 
 [project.optional-dependencies]
 dev = [

@@ -208,6 +208,18 @@ posts = client.get_user_posts("2656274875", page=1)  # Uses proxy
 - `download_post_images(post, ...)`, `download_user_posts_images(uid, pages=2, ...)`: Download image assets
 - **Unified Exceptions**: `NetworkError`, `RateLimitError`, `UserNotFoundError`, etc., for business-level error handling
 
+## CLI
+```bash
+uv run crawl4weibo-cli get-user --uid 2656274875
+uv run crawl4weibo-cli search-users --query "Lei Jun" --count 5
+uv run crawl4weibo-cli search-posts --query "新能源" --page 1
+```
+
+The CLI prints JSON by default and supports `--detail compact|full`,
+cookie flags, comment expansion, and proxy disabling.
+
+For OpenClaw usage, see `skills/crawl4weibo/SKILL.md`.
+
 ## MCP Server (for agents)
 
 MCP setup details moved to dedicated docs:

@@ -206,6 +206,18 @@ posts = client.get_user_posts("2656274875", page=1)  # 使用代理
 - `download_post_images(post, ...)`、`download_user_posts_images(uid, pages=2, ...)`：下载图像素材
 - **统一异常**：`NetworkError`、`RateLimitError`、`UserNotFoundError` 等，便于业务兜底
 
+## CLI
+```bash
+uv run crawl4weibo-cli get-user --uid 2656274875
+uv run crawl4weibo-cli search-users --query "雷军" --count 5
+uv run crawl4weibo-cli search-posts --query "新能源" --page 1
+```
+
+CLI 默认输出 JSON，支持 `--detail compact|full`、cookie 相关参数、
+评论扩展，以及 `--no-proxy`。
+
+如果要给 OpenClaw 直接使用，请参考 `skills/crawl4weibo/SKILL.md`。
+
 ## MCP 服务器（供 Agent 调用）
 
 MCP 相关说明已迁移至独立文档：
