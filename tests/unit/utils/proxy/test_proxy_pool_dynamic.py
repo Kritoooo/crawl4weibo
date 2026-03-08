@@ -415,7 +415,7 @@ class TestProxyPoolDynamic:
 
     @responses.activate
     def test_get_proxy_plain_text_with_special_chars_in_credentials(self):
-        """Test URL encoding for plain text format with special chars (excluding colon)"""
+        """Test URL encoding for plain text credentials with special chars."""
         proxy_api_url = "http://api.proxy.com/get"
         # Note: colon (:) cannot be used in plain text format as it's the delimiter
         # Test with @, /, and other special chars

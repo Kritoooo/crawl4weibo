@@ -220,12 +220,14 @@ class TestImageDownloaderIntegration:
                     download_dir=temp_dir,
                     subdir="test"
                 )
-                
+
                 assert isinstance(results, dict)
                 assert len(results) == len(post.pic_urls)
-                
-                successful_downloads = sum(1 for path in results.values() if path is not None)
+
+                successful_downloads = sum(
+                    1 for path in results.values() if path is not None
+                )
                 assert successful_downloads >= 0  # At least attempt was made
-                
+
         except Exception as e:
             pytest.skip(f"Integration test failed due to network/API issues: {e}")

@@ -242,6 +242,6 @@ class TestOnceProxy:
 
         proxies = [pool.get_proxy() for _ in range(5)]
 
-        assert len(set(p["http"] for p in proxies)) == 5
+        assert len({p["http"] for p in proxies}) == 5
         assert len(responses.calls) == 1
         assert pool.get_once_buffer_size() == 0

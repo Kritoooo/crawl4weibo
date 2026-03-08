@@ -46,7 +46,8 @@ class TestWeiboClientIntegration:
 
             assert user.id == test_uid
             assert len(user.screen_name) > 0
-            # followers_count is a formatted string (e.g., "1.4亿"), check it's not empty
+            # followers_count is a formatted string (for example, "1.4亿").
+            # Check that it is not empty.
             assert len(str(user.followers_count)) > 0
 
         except Exception as e:

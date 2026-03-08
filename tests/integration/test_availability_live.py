@@ -26,7 +26,11 @@ def test_weibo_api_availability_smoke() -> None:
 
     start = time.monotonic()
     proxy_api_url = os.getenv("WEIBO_PROXY_API_URL")
-    use_once_proxy = os.getenv("WEIBO_USE_ONCE_PROXY", "").lower() in {"1", "true", "yes"}
+    use_once_proxy = os.getenv("WEIBO_USE_ONCE_PROXY", "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
     proxy_config = (
         ProxyPoolConfig(proxy_api_url=proxy_api_url, use_once_proxy=use_once_proxy)
         if proxy_api_url
