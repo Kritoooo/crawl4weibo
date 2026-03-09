@@ -221,9 +221,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     _add_client_args(get_user_posts_parser)
     _add_request_args(get_user_posts_parser)
-    get_user_posts_parser.add_argument(
-        "--uid", required=True, help="Weibo user UID."
-    )
+    get_user_posts_parser.add_argument("--uid", required=True, help="Weibo user UID.")
     get_user_posts_parser.add_argument(
         "--page", type=int, default=1, help="Timeline page number."
     )
@@ -271,9 +269,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     _add_client_args(search_users_parser)
     _add_request_args(search_users_parser)
-    search_users_parser.add_argument(
-        "--query", required=True, help="Search keyword."
-    )
+    search_users_parser.add_argument("--query", required=True, help="Search keyword.")
     search_users_parser.add_argument(
         "--page", type=int, default=1, help="Search results page number."
     )
@@ -295,9 +291,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     _add_client_args(search_posts_parser)
     _add_request_args(search_posts_parser)
-    search_posts_parser.add_argument(
-        "--query", required=True, help="Search keyword."
-    )
+    search_posts_parser.add_argument("--query", required=True, help="Search keyword.")
     search_posts_parser.add_argument(
         "--page", type=int, default=1, help="Search results page number."
     )
