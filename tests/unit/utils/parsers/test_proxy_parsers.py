@@ -190,8 +190,18 @@ class TestJsonParser:
         """Test parsing array of proxy dicts with authentication"""
         data = {
             "data": [
-                {"ip": "1.2.3.4", "port": "8080", "username": "user1", "password": "pass1"},
-                {"ip": "5.6.7.8", "port": "9090", "username": "user2", "password": "pass2"},
+                {
+                    "ip": "1.2.3.4",
+                    "port": "8080",
+                    "username": "user1",
+                    "password": "pass1",
+                },
+                {
+                    "ip": "5.6.7.8",
+                    "port": "9090",
+                    "username": "user2",
+                    "password": "pass2",
+                },
             ]
         }
         result = parse_json_proxies(data)

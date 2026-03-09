@@ -345,7 +345,9 @@ class TestPostsWithComments:
 
         # Mock get_all_comments to raise an exception
         with patch.object(
-            client_no_rate_limit, "get_all_comments", side_effect=RuntimeError("API error")
+            client_no_rate_limit,
+            "get_all_comments",
+            side_effect=RuntimeError("API error"),
         ):
             # Should not raise exception, just return post with empty comments
             post = client_no_rate_limit.get_post_by_bid(
@@ -357,7 +359,9 @@ class TestPostsWithComments:
             assert len(post.comments) == 0  # Comments should be empty due to exception
 
     @responses.activate
-    def test_fetch_comments_for_posts_all_fail_with_exception(self, client_no_rate_limit):
+    def test_fetch_comments_for_posts_all_fail_with_exception(
+        self, client_no_rate_limit
+    ):
         """Test _fetch_comments_for_posts when all requests raise exceptions"""
         from unittest.mock import patch
 

@@ -53,7 +53,6 @@ class TestProxyElimination:
             status=200,
         )
 
-        proxy_config = ProxyPoolConfig(proxy_api_url=proxy_api_url, pool_size=5)
         client = client_no_rate_limit_with_proxy
 
         client.add_proxy("http://10.20.30.40:8080")
@@ -98,7 +97,7 @@ class TestProxyElimination:
 
     @responses.activate
     def test_proxy_not_removed_in_once_mode(self):
-        """Test that proxy is NOT removed in once mode (proxies are single-use anyway)"""
+        """Test that once-mode proxies are not removed after a 432."""
         proxy_api_url = "http://api.proxy.com/get"
         weibo_api_url = "https://m.weibo.cn/api/container/getIndex"
 
@@ -140,7 +139,10 @@ class TestProxyElimination:
         from crawl4weibo.utils.rate_limit import RateLimitConfig
 
         with patch("crawl4weibo.core.client.CookieFetcher"):
-            proxy_config = ProxyPoolConfig(proxy_api_url=proxy_api_url, use_once_proxy=True)
+            proxy_config = ProxyPoolConfig(
+                proxy_api_url=proxy_api_url,
+                use_once_proxy=True,
+            )
             rate_config = RateLimitConfig(disable_delay=True)
             client = WeiboClient(
                 rate_limit_config=rate_config,
