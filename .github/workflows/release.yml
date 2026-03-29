@@ -3,63 +3,71 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*.*.*"
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  create-release:
+  release:
     runs-on: ubuntu-22.04
+    environment:
+      name: pypi
     permissions:
       contents: write
-    
+      id-token: write
+
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
+      - name: Validate release tag
+        run: |
+          set -euo pipefail
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
+          tag_name="${GITHUB_REF_NAME}"
+          if ! [[ "${tag_name}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tag must match v<major>.<minor>.<patch>. Got ${tag_name}"
+            exit 1
+          fi
 
-    - name: Build package
-      run: |
-        uv build
+          git fetch origin main --tags
 
-    - name: Extract tag name
-      id: tag
-      run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          tag_commit="$(git rev-list -n 1 "${tag_name}")"
+          main_head="$(git rev-parse origin/main)"
 
-    - name: Generate changelog
-      id: changelog
-      run: |
-        # Simple changelog generation from git log
-        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-        git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD~1)..HEAD >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
+          if [ "${tag_commit}" != "${main_head}" ]; then
+            echo "::error::Release tags must point at the latest origin/main commit."
+            echo "::error::Tag ${tag_name} -> ${tag_commit}"
+            echo "::error::origin/main -> ${main_head}"
+            exit 1
+          fi
 
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ steps.tag.outputs.tag }}
-        name: Release ${{ steps.tag.outputs.tag }}
-        body: |
-          ## Changes
-          ${{ steps.changelog.outputs.CHANGELOG }}
-          
-          ## Installation
-          ```bash
-          # Download the wheel from this release assets, then install it locally.
-          pip install ./crawl4weibo-*.whl
-          # or pip install online
-          pip install crawl4weibo
-          ```
-        files: |
-          dist/*
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Build package
+        run: uv build
+
+      - name: Publish package to PyPI
+        env:
+          UV_TRUSTED_PUBLISHING: always
+        run: uv publish
+
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/* \
+            --verify-tag \
+            --generate-notes \
+            --fail-on-no-commits \
+            --title "Release ${GITHUB_REF_NAME}"
