@@ -6,7 +6,7 @@ User model for crawl4weibo
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from ..utils.normalizers import parse_label_desc
 
@@ -27,10 +27,10 @@ class User:
     verified_reason: str = ""
     avatar_url: str = ""
     cover_image_url: str = ""
-    birthday: Optional[str] = None
+    birthday: str | None = None
     education: str = ""
     company: str = ""
-    registration_time: Optional[datetime] = None
+    registration_time: datetime | None = None
     sunshine_credit: str = ""
     ip_location: str = ""
     real_auth: bool = False

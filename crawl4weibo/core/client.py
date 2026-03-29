@@ -7,7 +7,7 @@ Weibo Crawler Client - Based on successfully tested code
 import random
 import time
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import requests
 
@@ -29,16 +29,16 @@ class WeiboClient:
 
     def __init__(
         self,
-        cookies: Optional[Union[str, dict[str, str]]] = None,
+        cookies: str | dict[str, str] | None = None,
         log_level: str = "INFO",
-        log_file: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        proxy_config: Optional[ProxyPoolConfig] = None,
-        rate_limit_config: Optional[RateLimitConfig] = None,
+        log_file: str | None = None,
+        user_agent: str | None = None,
+        proxy_config: ProxyPoolConfig | None = None,
+        rate_limit_config: RateLimitConfig | None = None,
         use_browser_cookies: bool = True,
         auto_fetch_cookies: bool = True,
         login_cookies: bool = False,
-        cookie_storage_path: Optional[Union[str, Path]] = None,
+        cookie_storage_path: str | Path | None = None,
         browser_headless: bool = True,
         login_timeout: int = 120,
     ):
@@ -165,7 +165,7 @@ class WeiboClient:
 
         self.logger.info("WeiboClient initialized successfully")
 
-    def _set_cookies(self, cookies: Union[str, dict[str, str]]):
+    def _set_cookies(self, cookies: str | dict[str, str]):
         if isinstance(cookies, str):
             cookie_dict = {}
             for pair in cookies.split(";"):
@@ -185,7 +185,7 @@ class WeiboClient:
         require_login: bool = False,
         browser_headless: bool = True,
         login_timeout: int = 120,
-        storage_state_path: Optional[Union[str, Path]] = None,
+        storage_state_path: str | Path | None = None,
     ):
         """
         Initialize session and fetch cookies
@@ -311,7 +311,7 @@ class WeiboClient:
         params: dict[str, Any],
         max_retries: int = 3,
         use_proxy: bool = True,
-        headers: Optional[dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """
         Send HTTP request
@@ -426,7 +426,7 @@ class WeiboClient:
         self,
         use_browser: bool = False,
         login_cookies: bool = False,
-        cookie_storage_path: Optional[Union[str, Path]] = None,
+        cookie_storage_path: str | Path | None = None,
         browser_headless: bool = True,
         login_timeout: int = 120,
     ):
@@ -454,7 +454,7 @@ class WeiboClient:
             storage_state_path=cookie_storage_path,
         )
 
-    def add_proxy(self, proxy_url: str, ttl: Optional[int] = None):
+    def add_proxy(self, proxy_url: str, ttl: int | None = None):
         """
         Manually add static proxy to proxy pool
 
@@ -658,12 +658,12 @@ class WeiboClient:
         count: int = 10,
         use_proxy: bool = True,
         *,
-        gender: Optional[str] = None,
-        location: Optional[str] = None,
-        birthday: Optional[str] = None,
-        age_range: Optional[tuple[Optional[int], Optional[int]]] = None,
-        education: Optional[str] = None,
-        company: Optional[str] = None,
+        gender: str | None = None,
+        location: str | None = None,
+        birthday: str | None = None,
+        age_range: tuple[int | None, int | None] | None = None,
+        education: str | None = None,
+        company: str | None = None,
     ) -> list[User]:
         """
         Search for users
@@ -860,7 +860,7 @@ class WeiboClient:
     def search_all_posts(
         self,
         query: str,
-        max_pages: Optional[int] = None,
+        max_pages: int | None = None,
         with_comments: bool = False,
         comment_limit: int = 10,
         use_proxy: bool = True,
@@ -936,9 +936,9 @@ class WeiboClient:
     def download_post_images(
         self,
         post: Post,
-        download_dir: Optional[str] = None,
-        subdir: Optional[str] = None,
-    ) -> dict[str, Optional[str]]:
+        download_dir: str | None = None,
+        subdir: str | None = None,
+    ) -> dict[str, str | None]:
         """
         Download images from a single post
 
@@ -963,9 +963,9 @@ class WeiboClient:
     def download_posts_images(
         self,
         posts: list[Post],
-        download_dir: Optional[str] = None,
-        subdir: Optional[str] = None,
-    ) -> dict[str, dict[str, Optional[str]]]:
+        download_dir: str | None = None,
+        subdir: str | None = None,
+    ) -> dict[str, dict[str, str | None]]:
         """
         Download images from multiple posts
 
@@ -996,9 +996,9 @@ class WeiboClient:
         self,
         uid: str,
         pages: int = 1,
-        download_dir: Optional[str] = None,
+        download_dir: str | None = None,
         expand_long_text: bool = False,
-    ) -> dict[str, dict[str, Optional[str]]]:
+    ) -> dict[str, dict[str, str | None]]:
         """
         Download images from user's posts
 
@@ -1062,7 +1062,7 @@ class WeiboClient:
     def get_all_comments(
         self,
         post_id: str,
-        max_pages: Optional[int] = None,
+        max_pages: int | None = None,
         use_proxy: bool = True,
     ) -> list[Comment]:
         """

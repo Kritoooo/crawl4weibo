@@ -244,9 +244,7 @@ class TestWeiboClientComments:
         weibo_api_url = "https://m.weibo.cn/api/comments/show"
 
         # Mock session initialization
-        responses.add(
-            responses.GET, "https://m.weibo.cn/", body="", status=200
-        )
+        responses.add(responses.GET, "https://m.weibo.cn/", body="", status=200)
 
         # Mock page 1
         responses.add(

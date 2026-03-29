@@ -280,9 +280,7 @@ class TestProxyPoolDynamic:
     def test_get_proxy_plain_text_single_line(self):
         """Test parsing single line plain text proxy"""
         proxy_api_url = "http://api.proxy.com/get"
-        responses.add(
-            responses.GET, proxy_api_url, body="10.20.30.40:8080", status=200
-        )
+        responses.add(responses.GET, proxy_api_url, body="10.20.30.40:8080", status=200)
 
         config = ProxyPoolConfig(proxy_api_url=proxy_api_url)
         pool = ProxyPool(config=config)

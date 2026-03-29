@@ -9,7 +9,7 @@ import random
 import time
 import urllib.parse
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -23,11 +23,11 @@ class ImageDownloader:
 
     def __init__(
         self,
-        session: Optional[requests.Session] = None,
+        session: requests.Session | None = None,
         download_dir: str = "./images",
         max_retries: int = 3,
         delay_range: tuple[float, float] = (1.0, 3.0),
-        proxy_pool: Optional[ProxyPool] = None,
+        proxy_pool: ProxyPool | None = None,
     ):
         """
         Initialize image downloader
@@ -64,9 +64,9 @@ class ImageDownloader:
     def download_image(
         self,
         url: str,
-        filename: Optional[str] = None,
-        subdir: Optional[str] = None,
-    ) -> Optional[str]:
+        filename: str | None = None,
+        subdir: str | None = None,
+    ) -> str | None:
         """
         Download a single image
 
@@ -162,8 +162,8 @@ class ImageDownloader:
         self,
         pic_urls: list[str],
         post_id: str,
-        subdir: Optional[str] = None,
-    ) -> dict[str, Optional[str]]:
+        subdir: str | None = None,
+    ) -> dict[str, str | None]:
         """
         Download all images from a post
 
@@ -207,8 +207,8 @@ class ImageDownloader:
     def download_posts_images(
         self,
         posts: list[Any],
-        subdir: Optional[str] = None,
-    ) -> dict[str, dict[str, Optional[str]]]:
+        subdir: str | None = None,
+    ) -> dict[str, dict[str, str | None]]:
         """
         Download images from multiple posts
 

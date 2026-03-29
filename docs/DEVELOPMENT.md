@@ -12,7 +12,7 @@
 ## Development Environment Setup
 
 ### Requirements
-- Python 3.9+
+- Python 3.10+
 - uv (recommended package manager)
 
 ### Quick Start
@@ -33,8 +33,10 @@ uv run pytest tests/ -v
 [dependency-groups]
 dev = [
     "pytest>=7.4.4",    # Testing framework
-    "pytest-cov>=4.1.0", # Test coverage
-    "ruff>=0.14.0",      # Modern fast linter and formatter
+    "pytest-asyncio>=0.24.0", # Async test support
+    "pytest-cov>=4.1.0",      # Test coverage
+    "responses>=0.25.8",      # HTTP response mocking
+    "ruff>=0.14.0",           # Modern fast linter and formatter
 ]
 ```
 
@@ -212,7 +214,7 @@ Ruff configuration in `pyproject.toml`:
 ```toml
 [tool.ruff]
 line-length = 88
-target-version = "py38"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [

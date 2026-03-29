@@ -20,7 +20,7 @@ class Post:
     bid: str
     user_id: str
     text: str = ""
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None
     source: str = ""
     reposts_count: int = 0
     comments_count: int = 0

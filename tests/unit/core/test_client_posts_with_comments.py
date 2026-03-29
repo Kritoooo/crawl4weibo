@@ -4,7 +4,6 @@ import responses
 
 @pytest.mark.unit
 class TestPostsWithComments:
-
     @responses.activate
     def test_get_user_posts_with_comments(self, client_no_rate_limit):
         """Test fetching user posts with comments enabled"""

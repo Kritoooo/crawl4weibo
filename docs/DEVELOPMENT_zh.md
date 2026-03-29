@@ -12,7 +12,7 @@
 ## 开发环境设置
 
 ### 环境要求
-- Python 3.9+
+- Python 3.10+
 - uv (推荐的包管理工具)
 
 ### 快速开始
@@ -33,8 +33,10 @@ uv run pytest tests/ -v
 [dependency-groups]
 dev = [
     "pytest>=7.4.4",    # 测试框架
-    "pytest-cov>=4.1.0", # 测试覆盖率
-    "ruff>=0.14.0",      # 现代化的快速linter和formatter
+    "pytest-asyncio>=0.24.0", # 异步测试支持
+    "pytest-cov>=4.1.0",      # 测试覆盖率
+    "responses>=0.25.8",      # HTTP 响应模拟
+    "ruff>=0.14.0",           # 现代化的快速 linter 和 formatter
 ]
 ```
 
@@ -212,7 +214,7 @@ Ruff配置在 `pyproject.toml` 中:
 ```toml
 [tool.ruff]
 line-length = 88
-target-version = "py38"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [

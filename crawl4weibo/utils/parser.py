@@ -6,7 +6,7 @@ HTML/JSON parsing utilities for crawl4weibo
 
 import re
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from ..exceptions.base import ParseError
 from .logger import get_logger
@@ -205,7 +205,7 @@ class WeiboParser:
             self.logger.error(f"Failed to parse posts: {e}")
             raise ParseError(f"Failed to parse posts: {e}")
 
-    def _parse_single_post(self, mblog: dict[str, Any]) -> Optional[dict[str, Any]]:
+    def _parse_single_post(self, mblog: dict[str, Any]) -> dict[str, Any] | None:
         try:
             post = {
                 "id": str(mblog.get("id", "")),
@@ -244,7 +244,7 @@ class WeiboParser:
         text = re.sub(r"\s+", " ", text).strip()
         return text
 
-    def _parse_time(self, time_str: str) -> Optional[datetime]:
+    def _parse_time(self, time_str: str) -> datetime | None:
         if not time_str:
             return None
 
@@ -327,7 +327,7 @@ class WeiboParser:
 
     def _parse_single_comment(
         self, comment_data: dict[str, Any]
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Parse a single comment from API response"""
         try:
             user_data = comment_data.get("user", {})

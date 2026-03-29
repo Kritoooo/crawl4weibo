@@ -421,27 +421,17 @@ def test_parse_args_cookie_help_mentions_auto_fetch_flag(server_module):
 
 
 @pytest.mark.unit
-def test_top_level_module_skips_mcp_export_on_py39(monkeypatch):
-    monkeypatch.setattr(sys, "version_info", (3, 9, 18))
-
-    for module_name in ["crawl4weibo", "crawl4weibo.mcp", "crawl4weibo.mcp.server"]:
-        monkeypatch.delitem(sys.modules, module_name, raising=False)
-
-    module = importlib.import_module("crawl4weibo")
-    module = importlib.reload(module)
-
-    assert "create_mcp_server" not in module.__all__
-
-
-@pytest.mark.unit
 def test_main_runs_server_with_expected_flags(server_module):
     fake_server = FakeFastMCP("crawl4weibo")
 
-    with patch.object(server_module, "parse_args") as mock_parse, patch.object(
-        server_module,
-        "create_mcp_server",
-        return_value=fake_server,
-    ) as mock_create:
+    with (
+        patch.object(server_module, "parse_args") as mock_parse,
+        patch.object(
+            server_module,
+            "create_mcp_server",
+            return_value=fake_server,
+        ) as mock_create,
+    ):
         mock_parse.return_value = server_module.argparse.Namespace(
             cookie="SUB=test",
             disable_browser_cookies=True,
@@ -460,10 +450,13 @@ def test_main_runs_server_with_expected_flags(server_module):
 
 @pytest.mark.unit
 def test_main_exits_with_message_when_server_creation_fails(server_module):
-    with patch.object(server_module, "parse_args") as mock_parse, patch.object(
-        server_module,
-        "create_mcp_server",
-        side_effect=RuntimeError("install mcp"),
+    with (
+        patch.object(server_module, "parse_args") as mock_parse,
+        patch.object(
+            server_module,
+            "create_mcp_server",
+            side_effect=RuntimeError("install mcp"),
+        ),
     ):
         mock_parse.return_value = server_module.argparse.Namespace(
             cookie=None,
@@ -497,8 +490,11 @@ def test_create_mcp_server_raises_runtime_error_without_mcp(monkeypatch):
     module = importlib.import_module("crawl4weibo.mcp.server")
     module = importlib.reload(module)
 
-    with patch.object(module, "_build_client", return_value=MagicMock()), pytest.raises(
-        RuntimeError,
-        match="MCP support is not installed",
+    with (
+        patch.object(module, "_build_client", return_value=MagicMock()),
+        pytest.raises(
+            RuntimeError,
+            match="MCP support is not installed",
+        ),
     ):
         module.create_mcp_server()
