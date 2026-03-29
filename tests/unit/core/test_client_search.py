@@ -455,4 +455,3 @@ class TestSearchAllPosts:
         posts = client_no_rate_limit.search_all_posts("NonExistentTopic")
 
         assert len(posts) == 0
-

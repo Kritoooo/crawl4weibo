@@ -6,8 +6,8 @@ Proxy pool manager
 
 import random
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Optional
 
 import requests
 
@@ -18,10 +18,10 @@ from .proxy_parsers import default_proxy_parser
 class ProxyPoolConfig:
     """Proxy pool configuration class"""
 
-    proxy_api_url: Optional[str] = None
+    proxy_api_url: str | None = None
     """Dynamic proxy API URL"""
 
-    proxy_api_parser: Optional[Callable[[dict], list[str]]] = None
+    proxy_api_parser: Callable[[dict], list[str]] | None = None
     """Custom proxy API response parser function, should return list of proxy URLs"""
 
     dynamic_proxy_ttl: int = 300
@@ -42,7 +42,7 @@ class ProxyPoolConfig:
 class ProxyPool:
     """Proxy pool manager, supports unified management of dynamic and static proxies"""
 
-    def __init__(self, config: Optional[ProxyPoolConfig] = None):
+    def __init__(self, config: ProxyPoolConfig | None = None):
         """
         Initialize proxy pool
 
@@ -55,7 +55,7 @@ class ProxyPool:
         self._current_index = 0
         self._once_mode_buffer: list[str] = []
 
-    def add_proxy(self, proxy_url: str, ttl: Optional[int] = None):
+    def add_proxy(self, proxy_url: str, ttl: int | None = None):
         """
         Manually add static proxy to proxy pool
 
@@ -105,7 +105,7 @@ class ProxyPool:
         """
         return len(self._proxy_pool) >= self.config.pool_size
 
-    def get_proxy(self) -> Optional[dict[str, str]]:
+    def get_proxy(self) -> dict[str, str] | None:
         """
         Get an available proxy
 

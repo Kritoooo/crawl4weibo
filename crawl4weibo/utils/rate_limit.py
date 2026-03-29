@@ -7,7 +7,7 @@ Rate limiting configuration and decorator for API methods
 import functools
 import random
 import time
-from typing import Callable, Optional
+from collections.abc import Callable
 
 
 class RateLimitConfig:
@@ -25,7 +25,7 @@ class RateLimitConfig:
         base_delay: tuple[float, float] = (1.0, 3.0),
         min_delay: tuple[float, float] = (0.1, 0.3),
         pool_size_threshold: int = 20,
-        method_multipliers: Optional[dict[str, float]] = None,
+        method_multipliers: dict[str, float] | None = None,
         disable_delay: bool = False,
     ):
         """
@@ -102,7 +102,7 @@ class RateLimitConfig:
         return random.uniform(*adjusted_range)
 
 
-def rate_limit(method_name: Optional[str] = None) -> Callable:
+def rate_limit(method_name: str | None = None) -> Callable:
     """
     Decorator to add rate limiting to WeiboClient methods
 

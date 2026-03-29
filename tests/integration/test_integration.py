@@ -12,19 +12,18 @@ from crawl4weibo.utils.rate_limit import RateLimitConfig
 def client():
     """
     Create a WeiboClient instance for integration testing with real authentication.
-    
+
     Integration tests use this fixture to get a client with:
     - Rate limiting disabled (no artificial delays between requests)
     - Real cookie fetching enabled (authenticates with Weibo API)
-    
+
     This provides true integration testing against the real API while still
     optimizing test execution speed by removing rate limit delays.
-    
+
     Note: Some tests may be skipped if the API is unavailable or rate-limited.
     """
     rate_config = RateLimitConfig(disable_delay=True)
     return WeiboClient(rate_limit_config=rate_config)
-
 
 
 @pytest.mark.integration
@@ -211,29 +210,25 @@ class TestWeiboClientIntegration:
             # Verify posts have comments field
             for post in posts[:2]:  # Check first 2 posts only
                 assert hasattr(post, "comments"), "Post should have comments field"
-                assert isinstance(
-                    post.comments, list
-                ), "Post.comments should be a list"
+                assert isinstance(post.comments, list), "Post.comments should be a list"
 
                 # If the post has comments on Weibo, verify they were fetched
                 if post.comments_count > 0:
                     # At least some posts should have fetched comments
                     # (might not all have comments if they're too new or disabled)
-                    assert (
-                        len(post.comments) <= 3
-                    ), "Should not exceed comment_limit of 3"
+                    assert len(post.comments) <= 3, (
+                        "Should not exceed comment_limit of 3"
+                    )
 
                     if post.comments:
                         comment = post.comments[0]
                         # Verify comment structure
                         assert hasattr(comment, "id"), "Comment should have id"
                         assert hasattr(comment, "text"), "Comment should have text"
-                        assert hasattr(
-                            comment, "user_screen_name"
-                        ), "Comment should have user_screen_name"
-                        assert (
-                            len(comment.text) > 0
-                        ), "Comment text should not be empty"
+                        assert hasattr(comment, "user_screen_name"), (
+                            "Comment should have user_screen_name"
+                        )
+                        assert len(comment.text) > 0, "Comment text should not be empty"
 
             print(
                 f"✓ Successfully fetched {len(posts)} posts, "
@@ -242,4 +237,3 @@ class TestWeiboClientIntegration:
 
         except Exception as e:
             pytest.skip(f"API call failed, skipping integration test: {e}")
-

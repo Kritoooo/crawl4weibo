@@ -12,7 +12,6 @@ import platform
 import random
 import time
 from pathlib import Path
-from typing import Optional, Union
 
 import requests
 
@@ -35,7 +34,7 @@ def _has_login_cookie(cookies: list[dict[str, str]]) -> bool:
     return any(cookie.get("name") in LOGIN_COOKIE_NAMES for cookie in cookies)
 
 
-def _discover_chrome_cdp_endpoint() -> Optional[str]:
+def _discover_chrome_cdp_endpoint() -> str | None:
     """读取 Chrome 的 DevToolsActivePort 文件，发现已运行的 Chrome 调试端点。
     支持 Chrome 146+ 的原生远程调试（approval mode）。"""
     home = Path.home()
@@ -78,12 +77,12 @@ class CookieFetcher:
 
     def __init__(
         self,
-        user_agent: Optional[str] = None,
+        user_agent: str | None = None,
         use_browser: bool = False,
         require_login: bool = False,
         login_timeout: int = 120,
         headless: bool = True,
-        storage_state_path: Optional[Union[str, Path]] = None,
+        storage_state_path: str | Path | None = None,
     ):
         """
         Initialize cookie fetcher
@@ -186,7 +185,7 @@ class CookieFetcher:
             # Use sync API
             return self._fetch_with_browser_sync(timeout)
 
-    def _resolve_storage_state_path(self) -> Optional[str]:
+    def _resolve_storage_state_path(self) -> str | None:
         if not self.storage_state_path:
             return None
         if self.storage_state_path.exists():
@@ -512,7 +511,7 @@ class CookieFetcher:
             return future.result()
 
 
-def fetch_cookies_simple(user_agent: Optional[str] = None) -> dict[str, str]:
+def fetch_cookies_simple(user_agent: str | None = None) -> dict[str, str]:
     """
     Convenience function to fetch cookies using simple requests method
 
@@ -527,12 +526,12 @@ def fetch_cookies_simple(user_agent: Optional[str] = None) -> dict[str, str]:
 
 
 def fetch_cookies_browser(
-    user_agent: Optional[str] = None,
+    user_agent: str | None = None,
     timeout: int = 30,
     require_login: bool = False,
     login_timeout: int = 120,
     headless: bool = True,
-    storage_state_path: Optional[Union[str, Path]] = None,
+    storage_state_path: str | Path | None = None,
 ) -> dict[str, str]:
     """
     Convenience function to fetch cookies using browser automation

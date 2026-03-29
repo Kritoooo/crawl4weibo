@@ -5,7 +5,7 @@ Comment model for crawl4weibo
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -24,8 +24,8 @@ class Comment:
     user_followers_count: str = ""
     like_counts: int = 0
     liked: bool = False
-    reply_id: Optional[str] = None
-    reply_text: Optional[str] = None
+    reply_id: str | None = None
+    reply_text: str | None = None
     pic_url: str = ""
     raw_data: dict[str, Any] = field(default_factory=dict)
 

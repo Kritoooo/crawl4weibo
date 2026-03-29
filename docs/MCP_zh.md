@@ -5,7 +5,6 @@
 ## 环境要求
 
 - Python 3.10+
-- 在 Python 3.9 下，无论使用 `uv`、`uvx` 还是 `pip`，`crawl4weibo[mcp]` 额外依赖都不会生效。
 
 ## 安装
 

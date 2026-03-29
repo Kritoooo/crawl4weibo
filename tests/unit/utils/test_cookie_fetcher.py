@@ -59,10 +59,13 @@ class TestLoginFlow:
             [{"name": "SUB", "value": "token"}],
         ]
 
-        with patch(
-            "crawl4weibo.utils.cookie_fetcher.time.time",
-            side_effect=[0, 0.1, 0.2],
-        ), patch("crawl4weibo.utils.cookie_fetcher.time.sleep"):
+        with (
+            patch(
+                "crawl4weibo.utils.cookie_fetcher.time.time",
+                side_effect=[0, 0.1, 0.2],
+            ),
+            patch("crawl4weibo.utils.cookie_fetcher.time.sleep"),
+        ):
             fetcher._wait_for_login_sync(context, timeout=1)
 
         assert context.cookies.call_count == 2
@@ -73,9 +76,10 @@ class TestLoginFlow:
         context = Mock()
         context.cookies.return_value = []
 
-        with patch(
-            "crawl4weibo.utils.cookie_fetcher.time.time", side_effect=[0, 0]
-        ), pytest.raises(TimeoutError):
+        with (
+            patch("crawl4weibo.utils.cookie_fetcher.time.time", side_effect=[0, 0]),
+            pytest.raises(TimeoutError),
+        ):
             fetcher._wait_for_login_sync(context, timeout=0)
 
     def test_ensure_login_sync_uses_storage_state(self, tmp_path):
@@ -120,10 +124,13 @@ class TestLoginFlow:
             side_effect=[[], [{"name": "SUB", "value": "token"}]]
         )
 
-        with patch(
-            "crawl4weibo.utils.cookie_fetcher.time.time",
-            side_effect=[0, 0.1, 0.2],
-        ), patch("crawl4weibo.utils.cookie_fetcher.asyncio.sleep", new=AsyncMock()):
+        with (
+            patch(
+                "crawl4weibo.utils.cookie_fetcher.time.time",
+                side_effect=[0, 0.1, 0.2],
+            ),
+            patch("crawl4weibo.utils.cookie_fetcher.asyncio.sleep", new=AsyncMock()),
+        ):
             await fetcher._wait_for_login_async(context, timeout=1)
 
         assert context.cookies.call_count == 2
@@ -135,9 +142,10 @@ class TestLoginFlow:
         context = Mock()
         context.cookies = AsyncMock(return_value=[])
 
-        with patch(
-            "crawl4weibo.utils.cookie_fetcher.time.time", side_effect=[0, 0]
-        ), pytest.raises(TimeoutError):
+        with (
+            patch("crawl4weibo.utils.cookie_fetcher.time.time", side_effect=[0, 0]),
+            pytest.raises(TimeoutError),
+        ):
             await fetcher._wait_for_login_async(context, timeout=0)
 
     @pytest.mark.asyncio
@@ -153,9 +161,7 @@ class TestLoginFlow:
         context = Mock()
         context.cookies = AsyncMock(return_value=[{"name": "SUB", "value": "token"}])
 
-        with patch(
-            "crawl4weibo.utils.cookie_fetcher.asyncio.sleep", new=AsyncMock()
-        ):
+        with patch("crawl4weibo.utils.cookie_fetcher.asyncio.sleep", new=AsyncMock()):
             await fetcher._ensure_login_async(page, context, timeout=1)
 
         page.goto.assert_awaited_once()
@@ -233,9 +239,11 @@ class TestLoginFlow:
         mock_browser.new_context.return_value = mock_context
         mock_playwright.chromium.launch.return_value = mock_browser
 
-        with patch("builtins.__import__") as mock_import, patch.object(
-            fetcher, "_ensure_login_sync"
-        ), patch.object(fetcher, "_persist_storage_state_sync") as persist_mock:
+        with (
+            patch("builtins.__import__") as mock_import,
+            patch.object(fetcher, "_ensure_login_sync"),
+            patch.object(fetcher, "_persist_storage_state_sync") as persist_mock,
+        ):
 
             def custom_import(name, *args, **kwargs):
                 if name == "playwright.sync_api":
@@ -288,6 +296,7 @@ class TestLoginFlow:
                 return None
 
         original_import = __import__
+
         async def ensure_noop(*args, **kwargs):
             return None
 
@@ -296,9 +305,11 @@ class TestLoginFlow:
         async def persist_stub(context):
             persist_calls.append(context)
 
-        with patch("builtins.__import__") as mock_import, patch.object(
-            fetcher, "_ensure_login_async", new=ensure_noop
-        ), patch.object(fetcher, "_persist_storage_state_async", new=persist_stub):
+        with (
+            patch("builtins.__import__") as mock_import,
+            patch.object(fetcher, "_ensure_login_async", new=ensure_noop),
+            patch.object(fetcher, "_persist_storage_state_async", new=persist_stub),
+        ):
 
             def custom_import(name, *args, **kwargs):
                 if name == "playwright.async_api":
@@ -543,11 +554,12 @@ class TestAsyncBrowserSupport:
         """Test browser mode uses sync API when not in event loop"""
         fetcher = CookieFetcher(use_browser=True)
 
-        with patch.object(
-            fetcher, "_fetch_with_browser_sync", return_value={"test": "cookie"}
-        ) as mock_sync, patch.object(
-            fetcher, "_fetch_with_browser_async_wrapper"
-        ) as mock_async:
+        with (
+            patch.object(
+                fetcher, "_fetch_with_browser_sync", return_value={"test": "cookie"}
+            ) as mock_sync,
+            patch.object(fetcher, "_fetch_with_browser_async_wrapper") as mock_async,
+        ):
             cookies = fetcher._fetch_with_browser()
 
             # Should call sync version
@@ -560,13 +572,14 @@ class TestAsyncBrowserSupport:
         """Test browser mode uses async API when in event loop"""
         fetcher = CookieFetcher(use_browser=True)
 
-        with patch.object(
-            fetcher, "_fetch_with_browser_sync"
-        ) as mock_sync, patch.object(
-            fetcher,
-            "_fetch_with_browser_async_wrapper",
-            return_value={"test": "cookie"},
-        ) as mock_async:
+        with (
+            patch.object(fetcher, "_fetch_with_browser_sync") as mock_sync,
+            patch.object(
+                fetcher,
+                "_fetch_with_browser_async_wrapper",
+                return_value={"test": "cookie"},
+            ) as mock_async,
+        ):
             cookies = fetcher._fetch_with_browser()
 
             # Should call async wrapper version

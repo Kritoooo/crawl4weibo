@@ -5,7 +5,6 @@ You can run crawl4weibo as an MCP server so LLM agents can call its tools direct
 ## Requirements
 
 - Python 3.10+
-- On Python 3.9, the `crawl4weibo[mcp]` extra is unavailable regardless of installer (`uv`, `uvx`, `pip`).
 
 ## Install
 
